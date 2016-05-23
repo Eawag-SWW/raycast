@@ -14,17 +14,13 @@ structure = ['1_project_boundary_3d', '2_project_boundary_2d', '3_clip_images_2d
              '5_cluster_2d', '6_cast_rays_3d', '7_cluster_3d', '8_assess_visibility', '9_assess_reliability']
 
 
-def main(settingsfile=None):
+def main():
     """Manages overall detection process, from beginning to end. This includes:
-		o	Read boundary, DEM, 3D mesh files into memory, check validity of coordinates
-		o	Read settings
-		o	Check the existence of intermediate files (3D boundaries, clipped images) and read them if possible
-		o	Filter out cameras that have inacceptable calibration accuracy
-		o	Orchestrate tasks
-		o	Error handling
-		o	Write intermediate results to files"""
+ - Read settings
+ - Initialize processing
+ - Error handling"""
 
-    # read settings
+    # read settings. No file passed implies default settings
     settings = SettingReader.SettingReader(None)
     # print settings.values['Global']['startingpoint']
 
@@ -37,32 +33,39 @@ def main(settingsfile=None):
 
 
 def start(settings):
+    """Start processing at appropriate location in processing"""
     functionname = settings.values['Global']['startingpoint'][2:]
     globals()[functionname](settings)
     pass
 
 
 def initialize(settings):
-    """Configures the processing by setting up necessary file structure and assessing starting point"""
+    """Configures the processing by setting up necessary file structure
+    and determining the starting point of the processing. The starting point is determined either
+    by reading the log file or can be imposed by the setting: Global>startingpoint."""
+
+    # Todo: implement setting interpretation for overriding starting point
 
     # set up working directory
     working_directory = settings.values['Global']['workingdirectory']
 
-    # check if directory exists and create otherwise
+    # check if working directory exists and create otherwise
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
         if debug: print "processing directory created."
 
     # check if log file exists
-    with open(os.path.join(working_directory, 'log.txt'), 'a+') as log:  # a+ means add to file
+    with open(os.path.join(working_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
         lines = log.readlines()
+        # try to read the last line
         if len(lines) > 0:
             position = lines[-1]
         else:
+            # If the file is empty, then set a default starting position
             position = structure[0]
-            # directory structure
-            checkdirectorystructure(working_directory)
         pass
+    # Set up directory structure
+    checkdirectorystructure(working_directory)
 
     if debug: print 'position is {currentPos}'.format(currentPos=position)
 
@@ -91,8 +94,8 @@ def project_boundary_3d(settings):
     dem_rasterband = dem_dataset.GetRasterBand(1)
     dem_geotransform = dem_dataset.GetGeoTransform()
 
-    # process data
-    # 3D shapefile
+    # Create output 3D polygon as geojson
+
     # Register driver
     driver = ogr.GetDriverByName('GeoJSON')
 
@@ -109,12 +112,11 @@ def project_boundary_3d(settings):
     if dataSource is None:
         print 'Could not create ' + filename
         return 1
-    # sys.exit(1)
 
-    # Create a new layer
     outlayer = dataSource.CreateLayer('boundaries', srs, geom_type=ogr.wkbMultiPolygon)
     featureDefn = outlayer.GetLayerDefn()
 
+    # The following structure mirrors the input polygon, while assigning elevation to each vertex
     for feature in boundary2D.GetLayer():
         # create feature
         outfeature = ogr.Feature(featureDefn)
@@ -178,7 +180,7 @@ def project_boundary_3d(settings):
 
 
 def project_boundary_2d(settings):
-    '''Projects 3D boundary onto 2D images and clips them.'''
+    """Projects 3D boundary into coordinate systems of 2D images."""
 
     # log position
     write_to_log(settings, structure[1])
@@ -192,9 +194,8 @@ def project_boundary_2d(settings):
         camera_name = camera['camera_name']
         output_file = os.path.join(settings.values['Global']['workingdirectory'], structure[1],
                                    camera_name + '_boundary2D.json')
-        # clip
+        # project and save
         project2D(settings, output_file, pMatrix)
-        # save
 
         pass
 

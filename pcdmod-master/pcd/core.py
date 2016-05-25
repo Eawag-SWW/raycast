@@ -47,7 +47,7 @@ def initialize(settings):
     # Todo: implement setting interpretation for overriding starting point
 
     # set up working directory
-    working_directory = settings.values['Global']['workingdirectory']
+    working_directory = settings.values['Global']['working_directory']
 
     # check if working directory exists and create otherwise
     if not os.path.exists(working_directory):
@@ -89,7 +89,7 @@ def project_boundary_3d(settings):
     write_to_log(settings, structure[0])
 
     # read data from file
-    boundary2D = LoadShape(settings.values['Inputs']['boundaryfile'])
+    boundary2D = LoadShape(settings.values['Inputs']['boundary_file'])
     dem_dataset = gdal.Open(settings.values['Inputs']['demfile'])
     dem_rasterband = dem_dataset.GetRasterBand(1)
     dem_geotransform = dem_dataset.GetGeoTransform()
@@ -105,7 +105,7 @@ def project_boundary_3d(settings):
 
     # Create new file
     # Create new, even if the last already exists, because otherwise there are problems
-    filename = os.path.join(settings.values['Global']['workingdirectory'], structure[0], 'boundary3D.json')
+    filename = os.path.join(settings.values['Global']['working_directory'], structure[0], 'boundary3D.json')
     if os.path.exists(filename):
         driver.DeleteDataSource(filename)
     dataSource = driver.CreateDataSource(filename)
@@ -186,16 +186,16 @@ def project_boundary_2d(settings):
     write_to_log(settings, structure[1])
 
     # Read image calibration parameters
-    params = readPmatrix(settings.values['Inputs']['calibrations'])
+    params = read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
 
     # Loop through images, project, clip, save
-    for camera in params[1:3]:
-        pMatrix = camera['camera_matrix']
+    for camera in params[0:10]:
+        # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
-        output_file = os.path.join(settings.values['Global']['workingdirectory'], structure[1],
+        output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],
                                    camera_name + '_boundary2D.json')
         # project and save
-        project2D(settings, output_file, pMatrix)
+        project2d(settings, output_file, camera)
 
         pass
 
@@ -204,14 +204,18 @@ def project_boundary_2d(settings):
     pass
 
 
-def project2D(settings, output_file, pMatrix):
-    if (debug): print 'working on ', output_file
+def project2d(settings, output_file, camera):
+    if debug: print 'working on ', output_file
 
-    print_calc = True
+    print_calc = debug
 
+    # calculate fixed offset for projection
+    KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
     # Load 3D boundary
+    # Todo: I tried externalizing the loading of the shape so that it didn't have to be done for each image. However,
+    # only the projection for the first image would work - the other were returned empty.
     boundary3D = LoadShape(os.path.join(
-        settings.values['Global']['workingdirectory'],
+        settings.values['Global']['working_directory'],
         structure[0],
         'boundary3D.json'), 'GeoJSON')
 
@@ -253,17 +257,20 @@ def project2D(settings, output_file, pMatrix):
                 points = ring.GetPointCount()
                 for p in xrange(points):
                     x, y, z = ring.GetPoint(p)
-                    point3D = np.array([[x], [y], [z], [1]])
-                    # project boundary to image coordinates
-                    vec = np.dot(pMatrix, point3D)
+                    X = np.array([[x], [y], [z]])
+                    # project boundary to image coordinates vec = KRX-KRt
+                    vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
 
-                    u = vec[0, 0] / vec[2, 0]
-                    v = vec[1, 0] / vec[2, 0]
+                    u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
+                    v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
                     outring.AddPoint(u, v)
 
                     if print_calc:
-                        print '3D point:', point3D
-                        print 'pMatrix:', pMatrix
+                        print '3D point: ', X
+                        print 'camera pos: ', camera['t']
+                        print 'rotation: ', camera['R']
+                        print 'matrix: ', camera['K']
+                        print '3D point:', X
                         print 'camera coords:', vec
                         print 'u: ', u
                         print 'v: ', v
@@ -315,6 +322,53 @@ def readPmatrix(filename):
     return params
 
 
+def read_camera_params(filename_offset, filename_params):
+    # make a list of dictionaries
+    params = []
+
+    # Read XYZ offset
+    with open(filename_offset, 'r') as offsetfile:
+        offset = map(float, offsetfile.readlines()[0].split())
+
+    # Open the file for reading.
+    with open(filename_params, 'r') as infile:
+        data = infile.readlines()  # Read the contents of the file into memory.
+        imagecount = (len(data)-8)/10
+        print imagecount, ' images'
+    # Divide into sections
+    for m in range(imagecount):
+        linebase = 8+m*10
+        dic = {}
+        splitted = data[linebase].split()
+        dic['camera_name'] = splitted[0]
+        dic['camera_w'] = int(splitted[1])
+        dic['camera_h'] = int(splitted[2])
+
+        # CAMERA MATRIX K
+        linebase = linebase +1
+        splitted = []
+        for i in range(3):
+            splitted.append(map(float, data[linebase+i].split()))
+        dic['K'] = np.array(splitted)
+
+        # CAMERA POSITION t
+        linebase = linebase +5 # Jump to camera position
+        splitted = np.array(map(float, data[linebase].split())) + offset
+        dic['t'] = np.reshape(splitted,(3,1))
+
+        # CAMERA ROTATION R
+        linebase = linebase +1
+        splitted = []
+        for i in range(3):
+            splitted.append(map(float, data[linebase+i].split()))
+        dic['R'] = np.array(splitted)
+
+        # Save camera
+        params.append(dic)
+
+    return params
+
+
 def LoadShape(filename, driver='ESRI Shapefile'):
     # Load points as a numpy array, in order to be evaluated
 
@@ -333,7 +387,7 @@ def LoadShape(filename, driver='ESRI Shapefile'):
 
 
 def write_to_log(settings, line):
-    with open(os.path.join(settings.values['Global']['workingdirectory'], 'log.txt'),
+    with open(os.path.join(settings.values['Global']['working_directory'], 'log.txt'),
               'a+') as log:  # a+ means add to file
         log.write('\n' + line)
     pass

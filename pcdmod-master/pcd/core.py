@@ -2,6 +2,7 @@
 
 # Modules
 import SettingReader
+import rasterclipper
 import os
 import gdal
 import ogr
@@ -200,6 +201,25 @@ def project_boundary_2d(settings):
         pass
 
     # call next function
+    def clip_images_2d(settings):
+        """Clips images with the projected road boundary information"""
+
+        # log position
+        write_to_log(settings, structure[0])
+
+        output_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
+
+        # Loop through files of projected boundaries
+        boundary_folder = os.path.join(settings.values['Global']['working_directory'], structure[1])
+
+        for boundary_file in os.listdir(boundary_folder):
+            image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'tif')
+            try:
+                with gdal.Open(image_file, gdal.GA_Readonly) as rast:
+                    array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))
+            except:
+                print 'error'
+
 
     pass
 

@@ -17,7 +17,8 @@ Tasks:
  - read calibration parameters to dictionary
  - For each image (camera), project 3D boundary into 2D with help of the
    calibration parameters (pmatrix with offset). This is done by looping through vertices and transforming each one.
- - WARNING: because the transformation function is only valid around the center of focus of the camera, we have to delete some of the vertices.
+ - WARNING: because the transformation function is only valid around the center of focus of the camera,
+   we have to delete some of the vertices.
 Writes:
  - N 2D boundary multipolygons, where N is the number of cameras
     - format: GeoJSON

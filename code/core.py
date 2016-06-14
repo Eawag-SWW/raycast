@@ -2,17 +2,26 @@
 
 # Modules
 import SettingReader
-import rasterclipper
 import os
-import gdal
-import ogr
-import osr
-import sys
-import numpy as np
 
+import helpers
+
+from s1_project_boundary_3d import *
+from s2_project_boundary_2d import *
+from s3_clip_images_2d import *
+from s4_detect_objects_2d import *
+from s5_cluster_2d import *
+from s6_cast_rays_3d import *
+from s7_cluster_3d import *
+from s8_assess_visibility import *
+from s9_assess_reliability import *
+
+
+# Global variables
 debug = True
-structure = ['1_project_boundary_3d', '2_project_boundary_2d', '3_clip_images_2d', '4_detect_objects_2d',
-             '5_cluster_2d', '6_cast_rays_3d', '7_cluster_3d', '8_assess_visibility', '9_assess_reliability']
+structure = ['s1_project_boundary_3d', 's2_project_boundary_2d', 's3_clip_images_2d', 's4_detect_objects_2d',
+             's5_cluster_2d', 's6_cast_rays_3d', 's7_cluster_3d', 's8_assess_visibility', 's9_assess_reliability']
+current_position = structure[0]
 
 
 def main():
@@ -26,18 +35,21 @@ def main():
     # print settings.values['Global']['startingpoint']
 
     # initialize processing
-    initialize(settings)
+    current_position = initialize(settings)
 
-    start(settings)
+    # deduce steps that will have to be executed
+    steps_to_execute = structure[structure.index(current_position):]
+
+    # execute steps
+    for step in steps_to_execute:
+        helpers.write_to_log(settings=settings, line=step)
+        print '### ' + step
+        r = globals()[step[3:]](settings, structure, debug)
+        if r != 0:
+            break
+
 
     return 0
-
-
-def start(settings):
-    """Start processing at appropriate location in processing"""
-    functionname = settings.values['Global']['startingpoint'][2:]
-    globals()[functionname](settings)
-    pass
 
 
 def initialize(settings):
@@ -53,7 +65,8 @@ def initialize(settings):
     # check if working directory exists and create otherwise
     if not os.path.exists(working_directory):
         os.makedirs(working_directory)
-        if debug: print "processing directory created."
+        if debug:
+            print "processing directory created."
 
     # check if log file exists
     with open(os.path.join(working_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
@@ -61,19 +74,21 @@ def initialize(settings):
         # try to read the last line
         if len(lines) > 0:
             position = lines[-1]
+            log_append = ' from log file.'
         else:
             # If the file is empty, then set a default starting position
             position = structure[0]
+            log_append = ', chosen as default'
         pass
     # Set up directory structure
     checkdirectorystructure(working_directory)
 
-    if debug: print 'position is {currentPos}'.format(currentPos=position)
+    if debug:
+        print 'position is {currentPos}'.format(currentPos=position) + log_append
 
     # update settings
-    settings.values['Global']['startingpoint'] = position
 
-    return 0
+    return position
 
 
 def checkdirectorystructure(home):
@@ -84,335 +99,6 @@ def checkdirectorystructure(home):
             if debug: print  "directory created: {directory}".format(directory=directory)
     pass
 
-
-def project_boundary_3d(settings):
-    # log position
-    write_to_log(settings, structure[0])
-
-    # read data from file
-    boundary2D = LoadShape(settings.values['Inputs']['boundary_file'])
-    dem_dataset = gdal.Open(settings.values['Inputs']['demfile'])
-    dem_rasterband = dem_dataset.GetRasterBand(1)
-    dem_geotransform = dem_dataset.GetGeoTransform()
-
-    # Create output 3D polygon as geojson
-
-    # Register driver
-    driver = ogr.GetDriverByName('GeoJSON')
-
-    # create the spatial reference
-    srs = osr.SpatialReference()
-    srs.ImportFromEPSG(int(settings.values['Global']['epsg']))
-
-    # Create new file
-    # Create new, even if the last already exists, because otherwise there are problems
-    filename = os.path.join(settings.values['Global']['working_directory'], structure[0], 'boundary3D.json')
-    if os.path.exists(filename):
-        driver.DeleteDataSource(filename)
-    dataSource = driver.CreateDataSource(filename)
-    if dataSource is None:
-        print 'Could not create ' + filename
-        return 1
-
-    outlayer = dataSource.CreateLayer('boundaries', srs, geom_type=ogr.wkbMultiPolygon)
-    featureDefn = outlayer.GetLayerDefn()
-
-    # The following structure mirrors the input polygon, while assigning elevation to each vertex
-    for feature in boundary2D.GetLayer():
-        # create feature
-        outfeature = ogr.Feature(featureDefn)
-
-        # extract geometry
-        # for g in xrange(feature.getNumGeometries()):
-
-        # Create output polygon
-        outgeom = ogr.Geometry(ogr.wkbMultiPolygon)
-        # read polygon
-        ingeom = feature.GetGeometryRef()
-
-        print 'geometry count: ', ingeom.GetGeometryCount()
-        print 'geometry name: ', ingeom.GetGeometryName()
-        for inpoly in ingeom:
-            outpoly = ogr.Geometry(ogr.wkbPolygon)
-            # print 'polygon found'
-            for ring in inpoly:
-                outring = ogr.Geometry(ogr.wkbLinearRing)
-                points = ring.GetPointCount()
-                # print 'ring with points: ', points
-                for p in xrange(points):
-                    x, y, z = ring.GetPoint(p)
-                    px = int((x - dem_geotransform[0]) / dem_geotransform[1])
-                    py = int((y - dem_geotransform[3]) / dem_geotransform[5])
-                    # px = min(max(px,0),int(dem_geotransform[1])
-                    # py = min(max(py,0),dem_geotransform[5])
-                    z = float(dem_rasterband.ReadAsArray(px, py, 1, 1)[0][0])
-                    # print z
-                    # add point to polygon
-                    outring.AddPoint(x, y, z)
-
-                # add ring to polygon
-                outpoly.AddGeometry(outring)
-                # destroy ring
-                outring.Destroy()
-
-            outgeom.AddGeometry(outpoly)
-            outpoly.Destroy()
-
-        # add multipolygon to feature
-        outfeature.SetGeometry(outgeom)
-        # destroy polygon
-        outgeom.Destroy()
-
-        # add feature to layer
-        outlayer.CreateFeature(outfeature)
-        # destroy feature
-        outfeature.Destroy()
-
-    # destroy data source
-    dataSource.Destroy()
-
-    # close dem file
-    dem_dataset = None
-
-    # call next function
-    project_boundary_2d(settings)
-
-    pass
-
-
-def project_boundary_2d(settings):
-    """Projects 3D boundary into coordinate systems of 2D images."""
-
-    # log position
-    write_to_log(settings, structure[1])
-
-    # Read image calibration parameters
-    params = read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
-
-    # Loop through images, project, clip, save
-    for camera in params[0:10]:
-        # pMatrix = camera['camera_matrix']
-        camera_name = camera['camera_name']
-        output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],
-                                   camera_name + '_boundary2D.json')
-        # project and save
-        project2d(settings, output_file, camera)
-
-        pass
-
-    # call next function
-    pass
-
-
-def clip_images_2d(settings):
-    """Clips images with the projected road boundary information"""
-
-    # log position
-    write_to_log(settings, structure[0])
-
-    output_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
-
-    # Loop through files of projected boundaries
-    boundary_folder = os.path.join(settings.values['Global']['working_directory'], structure[1])
-
-    for boundary_file in os.listdir(boundary_folder):
-        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'tif')
-        try:
-            with gdal.Open(image_file, gdal.GA_Readonly) as rast:
-                array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))
-        except:
-            print 'error'
-
-    pass
-
-
-def project2d(settings, output_file, camera):
-    if debug: print 'working on ', output_file
-
-    print_calc = debug
-
-    # calculate fixed offset for projection
-    KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
-    # Load 3D boundary
-    # Todo: I tried externalizing the loading of the shape so that it didn't have to be done for each image. However,
-    # only the projection for the first image would work - the other were returned empty.
-    boundary3D = LoadShape(os.path.join(
-        settings.values['Global']['working_directory'],
-        structure[0],
-        'boundary3D.json'), 'GeoJSON')
-
-    # Register driver
-    driver = ogr.GetDriverByName('GeoJSON')
-
-    # create the spatial reference
-    # srs = osr.SpatialReference()
-    # srs.ImportFromEPSG(int(settings.values['Global']['epsg']))
-
-    # Create new file
-    # Create new, even if the last already exists, because otherwise there are problems
-    filename = os.path.join(output_file)
-    if os.path.exists(filename):
-        driver.DeleteDataSource(filename)
-    data_source = driver.CreateDataSource(filename)
-    if data_source is None:
-        print 'Could not create ' + filename
-        return 1
-    # sys.exit(1)
-
-    # Create a new layer
-    outlayer = data_source.CreateLayer('boundaries', None, geom_type=ogr.wkbMultiPolygon)
-    featureDefn = outlayer.GetLayerDefn()
-
-    for feature in boundary3D.GetLayer():
-        # create feature
-        outfeature = ogr.Feature(featureDefn)
-        # Create output polygon
-        outgeom = ogr.Geometry(ogr.wkbMultiPolygon)
-
-        # read polygon
-        ingeom = feature.GetGeometryRef()
-
-        for inpoly in ingeom:
-            outpoly = ogr.Geometry(ogr.wkbPolygon)
-            for ring in inpoly:
-                outring = ogr.Geometry(ogr.wkbLinearRing)
-                points = ring.GetPointCount()
-                for p in xrange(points):
-                    x, y, z = ring.GetPoint(p)
-                    X = np.array([[x], [y], [z]])
-                    # project boundary to image coordinates vec = KRX-KRt
-                    vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
-
-                    u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
-                    v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
-                    outring.AddPoint(u, v)
-
-                    if print_calc:
-                        print '3D point: ', X
-                        print 'camera pos: ', camera['t']
-                        print 'rotation: ', camera['R']
-                        print 'matrix: ', camera['K']
-                        print '3D point:', X
-                        print 'camera coords:', vec
-                        print 'u: ', u
-                        print 'v: ', v
-                        print_calc = False
-                        pass
-
-                # add ring to polygon
-                outpoly.AddGeometry(outring)
-                # destroy ring
-                outring.Destroy()
-
-            outgeom.AddGeometry(outpoly)
-            outpoly.Destroy()
-
-        # add multipolygon to feature
-        outfeature.SetGeometry(outgeom)
-        # destroy polygon
-        outgeom.Destroy()
-
-        # add feature to layer
-        outlayer.CreateFeature(outfeature)
-        # destroy feature
-        outfeature.Destroy()
-
-    # destroy data source
-    data_source.Destroy()
-
-    # close file
-    boundary3D = None
-
-    pass
-
-
-def readPmatrix(filename):
-    # make a list of dictionaries
-    params = []
-    # Open the file for reading.
-    with open(filename, 'r') as infile:
-        data = infile.readlines()  # Read the contents of the file into memory.
-
-    # Divide into sections
-    for line in data:
-        dic = {}
-        splitted = line.split()
-        dic['camera_name'] = splitted[0]
-        dic['camera_matrix'] = np.reshape(map(float, splitted[1:]), (3, 4))
-        params.append(dic)
-
-    return params
-
-
-def read_camera_params(filename_offset, filename_params):
-    # make a list of dictionaries
-    params = []
-
-    # Read XYZ offset
-    with open(filename_offset, 'r') as offsetfile:
-        offset = map(float, offsetfile.readlines()[0].split())
-
-    # Open the file for reading.
-    with open(filename_params, 'r') as infile:
-        data = infile.readlines()  # Read the contents of the file into memory.
-        imagecount = (len(data)-8)/10
-        print imagecount, ' images'
-    # Divide into sections
-    for m in range(imagecount):
-        linebase = 8+m*10
-        dic = {}
-        splitted = data[linebase].split()
-        dic['camera_name'] = splitted[0]
-        dic['camera_w'] = int(splitted[1])
-        dic['camera_h'] = int(splitted[2])
-
-        # CAMERA MATRIX K
-        linebase = linebase +1
-        splitted = []
-        for i in range(3):
-            splitted.append(map(float, data[linebase+i].split()))
-        dic['K'] = np.array(splitted)
-
-        # CAMERA POSITION t
-        linebase = linebase +5 # Jump to camera position
-        splitted = np.array(map(float, data[linebase].split())) + offset
-        dic['t'] = np.reshape(splitted,(3,1))
-
-        # CAMERA ROTATION R
-        linebase = linebase +1
-        splitted = []
-        for i in range(3):
-            splitted.append(map(float, data[linebase+i].split()))
-        dic['R'] = np.array(splitted)
-
-        # Save camera
-        params.append(dic)
-
-    return params
-
-
-def LoadShape(filename, driver='ESRI Shapefile'):
-    # Load points as a numpy array, in order to be evaluated
-
-    driver_shp = ogr.GetDriverByName(driver)
-    driver_shp.Register()
-    datasource = driver_shp.Open(filename, 0)
-
-    if datasource is None:
-        print "Shapefile load FAILED"
-        sys.exit(1)
-    else:
-        if debug: print "Shapefile loaded successfully: ", filename
-    # TO DO: Test that it is a point file
-
-    return datasource
-
-
-def write_to_log(settings, line):
-    with open(os.path.join(settings.values['Global']['working_directory'], 'log.txt'),
-              'a+') as log:  # a+ means add to file
-        log.write('\n' + line)
-    pass
 
 
 # run program

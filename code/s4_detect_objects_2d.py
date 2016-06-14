@@ -10,7 +10,7 @@ Reads:
     - read with: opencv CascadeClassifier
 Writes:
  - For each image, a collection of 2D prediction points
-    - format: TO BE DEFINED
+    - format: GeoJSON
     - location: [project home directory]/4_detect_objects_2d/
 Tasks:
  - Read detection scale range from settings (at what pixel scale should objects be detected?)

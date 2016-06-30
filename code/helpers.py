@@ -38,9 +38,11 @@ def write_to_log(settings, line):
     :return: none
     """
     import os
+    import datetime
 
     with open(os.path.join(settings.values['Global']['working_directory'], 'log.txt'),
               'a+') as log:  # a+ means add to file
+        log.write('\n' + str(datetime.datetime.now()))
         log.write('\n' + line)
     pass
 

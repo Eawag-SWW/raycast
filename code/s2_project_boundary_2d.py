@@ -42,7 +42,7 @@ def project_boundary_2d(settings, structure, debug):
     params = helpers.read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
 
     # Loop through images, project, clip, save
-    for camera in params[0:10]:
+    for camera in params[100:110]:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
         output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],

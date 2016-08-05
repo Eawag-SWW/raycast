@@ -24,6 +24,8 @@ import helpers
 import os
 import gdal
 import rasterclipper
+import gdalconst
+from subprocess import call
 
 
 def clip_images_2d(settings, structure, debug):
@@ -36,11 +38,17 @@ def clip_images_2d(settings, structure, debug):
     boundary_folder = os.path.join(settings.values['Global']['working_directory'], structure[1])
 
     for boundary_file in os.listdir(boundary_folder):
-        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'tif')
-        try:
-            with gdal.Open(image_file, gdal.GA_Readonly) as rast:
-                array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))
-        except:
-            print 'error'
-
-    pass
+        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'.tif')
+        image_file_clipped = os.path.join(output_folder,boundary_file.split('.')[0]+'_clipped.tif')
+        if os.path.isfile(image_file):
+            # call(["C:\OSGeo4W64\bin\gdalwarp.exe", '-dstnodata 0', '-q', '-cutline ' + os.path.join(boundary_folder, boundary_file),
+            #       '-dstalpha', '-of GTIFF', image_file, image_file_clipped])
+            os.system(settings.values['Global']['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
+                  ' -tr 1e-05 1e-05' + ' -of GTIFF' + ' ' + image_file + ' ' + image_file_clipped)
+            # gdalwarp - q - cutline
+            # C:\Temp\pcdTest\s2_project_boundary_2d\IMG_1000.JPG_boundary2D.json - tr
+            # 1e-05
+            # 1e-05
+            # C:\Users\Matthew\Workspace\raycast\demo_data\images\IMG_1000.tif
+            # with gdal.Open(image_file, gdalconst.GA_ReadOnly) as rast:
+            #     array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))

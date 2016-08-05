@@ -29,6 +29,7 @@ import rasterclipper
 def clip_images_2d(settings, structure, debug):
     """Clips images with the projected road boundary information"""
 
+
     output_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
 
     # Loop through files of projected boundaries

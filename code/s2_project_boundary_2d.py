@@ -42,7 +42,7 @@ def project_boundary_2d(settings, structure, debug):
     params = helpers.read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
 
     # Loop through images, project, clip, save
-    for camera in params:
+    for camera in params[100:110]:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
         output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],
@@ -61,6 +61,7 @@ def project2d(settings, output_file, camera, structure, debug=False):
     if debug:
         print 'working on ', output_file
 
+    print_calc = debug
 
     # calculate fixed offset for projection
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
@@ -117,6 +118,18 @@ def project2d(settings, output_file, camera, structure, debug=False):
                     u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
                     v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
                     outring.AddPoint(u, v)
+
+                    if print_calc:
+                        print '3D point: ', X
+                        print 'camera pos: ', camera['t']
+                        print 'rotation: ', camera['R']
+                        print 'matrix: ', camera['K']
+                        print '3D point:', X
+                        print 'camera coords:', vec
+                        print 'u: ', u
+                        print 'v: ', v
+                        print_calc = False
+                        pass
 
                 # add ring to polygon
                 outpoly.AddGeometry(outring)

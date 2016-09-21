@@ -38,7 +38,7 @@ def clip_images_2d(settings, structure, debug):
 
     for boundary_file in os.listdir(boundary_folder):
         image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'.tif')
-        image_file_clipped = os.path.join(output_folder,boundary_file.split('.')[0]+'_clipped.tif')
+        image_file_clipped = os.path.join(output_folder,boundary_file.split('.')[0]+'.tif')
         if os.path.isfile(image_file):
             # call(["C:\OSGeo4W64\bin\gdalwarp.exe", '-dstnodata 0', '-q', '-cutline ' + os.path.join(boundary_folder, boundary_file),
             #       '-dstalpha', '-of GTIFF', image_file, image_file_clipped])
@@ -51,3 +51,6 @@ def clip_images_2d(settings, structure, debug):
             # C:\Users\Matthew\Workspace\raycast\demo_data\images\IMG_1000.tif
             # with gdal.Open(image_file, gdalconst.GA_ReadOnly) as rast:
             #     array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))
+
+    return 0
+    pass

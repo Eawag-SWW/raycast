@@ -21,3 +21,8 @@ Writes:
    - format: TO BE DEFINED
 
 """
+
+
+def cluster_2d(settings, structure, debug):
+    return 0
+

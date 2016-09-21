@@ -112,8 +112,11 @@ def project2d(settings, output_file, camera, structure, debug=False):
                 for p in xrange(points):
                     x, y, z = ring.GetPoint(p)
                     X = np.array([[x], [y], [z]])
+
+                    # ===================================================
                     # project boundary to image coordinates vec = KRX-KRt
                     vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
+                    # ===================================================
 
                     u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
                     v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]

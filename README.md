@@ -1,4 +1,4 @@
-Raycast: Object detector for UAV photo clouds
+Raycast: Object detection framework for UAV photo clouds
 ========================
 ## Objective
 

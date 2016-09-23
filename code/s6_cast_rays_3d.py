@@ -28,6 +28,7 @@ Tools:
 """
 
 import os
+import vtk
 import numpy as np
 import helpers
 
@@ -48,21 +49,41 @@ def cast_rays_3d(settings, structure, debug):
         settings.values['Inputs']['camera_xyz_offset'],
         settings.values['Inputs']['camera_params'])
 
+    # Load 3D mesh
+    print 'Loading 3D mesh...'
+    mesh = loadSTL(settings.values['Inputs']['3dmesh'])
+
+    # Load mesh offset
+    with open(settings.values['Inputs']['3dmesh_offset'], 'r') as offsetfile:
+        mesh_offset = np.array(map(float, offsetfile.readlines()[0].split()))
+
+    # build OBB tree for fast intersection search
+    print 'Building OBB tree...'
+    obbTree = vtk.vtkOBBTree()
+    obbTree.SetDataSet(mesh)
+    obbTree.BuildLocator()
+
     # compute 3d points
     for cluster_list_file in os.listdir(cluster_folder):
+
+        # if cluster_list_file != 'IMG_1105.csv': continue
 
         print cluster_list_file
 
         # read clusters
-        cluster_list = np.loadtxt(os.path.join(cluster_folder, cluster_list_file), skiprows=1, delimiter=';')
+        cluster_list = np.loadtxt(os.path.join(cluster_folder, cluster_list_file), skiprows=1, delimiter=';', ndmin=2)
 
         # fetch parameters for image
         this_cam_params = filter(lambda c: c['camera_name'].split('.')[0] == cluster_list_file.split('.')[0], camera_params)[0]
 
+        # compute camera transforms
         KRt = np.dot(np.dot(this_cam_params['K'], this_cam_params['R']), this_cam_params['t'])
         KRinv = np.linalg.inv(np.dot(this_cam_params['K'], this_cam_params['R']))
+        # the zval is like an estimated elevation difference between camera and point
+        zval = 200
 
-        zval = 100
+        # intersection source (camera)
+        intersection_source = np.transpose(this_cam_params['t'])[0] - mesh_offset
 
         # for each cluster
         for cluster in cluster_list:
@@ -74,15 +95,40 @@ def cast_rays_3d(settings, structure, debug):
                 [zval]])
             X3d = np.dot(KRinv, (X2d + KRt))
 
-            # Step 2: create 3D line between 3D point and camera location
+            #  target (3D point) and intersections
+            intersection_target = np.transpose(X3d)[0] - mesh_offset
+            pointsVTKintersection = vtk.vtkPoints()
 
-            # Step 3: intersect line with surface and retain lowest
-
-
-            points_3d = np.vstack([points_3d, [X3d[0, 0], X3d[1, 0], X3d[2, 0]]])
+            # Step 2: intersect line with surface and retain lowest
+            code = obbTree.IntersectWithLine(intersection_source, intersection_target, pointsVTKintersection, None)
+            if code == 1:
+                pointsVTKIntersectionData = pointsVTKintersection.GetData()
+                noPointsVTKIntersection = pointsVTKIntersectionData.GetNumberOfTuples()
+                (x, y, z) = pointsVTKIntersectionData.GetTuple3(0)
+                new_point_3d = np.array([[x, y, z]]) + mesh_offset
+                points_3d = np.append(points_3d, new_point_3d, axis=0)
 
     # write to CSV
+    if debug:
+        print 'Saving 3D points to file'
     np.savetxt(output_file, points_3d, delimiter=" ",)
 
+    return 0
 
+
+def loadSTL(filenameSTL):
+    readerSTL = vtk.vtkSTLReader()
+    readerSTL.SetFileName(filenameSTL)
+    # 'update' the reader i.e. read the .stl file
+    readerSTL.Update()
+
+    polydata = readerSTL.GetOutput()
+
+    # If there are no points in 'vtkPolyData' something went wrong
+    if polydata.GetNumberOfPoints() == 0:
+        raise ValueError(
+            "No point data could be loaded from '" + filenameSTL)
+        return None
+
+    return polydata
 

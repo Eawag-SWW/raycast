@@ -42,7 +42,7 @@ def project_boundary_2d(settings, structure, debug):
     params = helpers.read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
 
     # Loop through images, project, clip, save
-    for camera in params[100:110]:
+    for camera in params:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
         output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],
@@ -63,8 +63,16 @@ def project2d(settings, output_file, camera, structure, debug=False):
 
     print_calc = debug
 
+
     # calculate fixed offset for projection
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
+
+    # create bounding box for clipping
+    xmin = float(camera['t'][0][0]) - int(settings.values['Image Clipping']['image_ground_size'])
+    xmax = float(camera['t'][0][0]) + int(settings.values['Image Clipping']['image_ground_size'])
+    ymin = float(camera['t'][1][0]) - int(settings.values['Image Clipping']['image_ground_size'])
+    ymax = float(camera['t'][1][0]) + int(settings.values['Image Clipping']['image_ground_size'])
+
     # Load 3D boundary
     # Todo: I tried externalizing the loading of the shape so that it didn't have to be done for each image. However,
     # only the projection for the first image would work - the other were returned empty.
@@ -111,28 +119,23 @@ def project2d(settings, output_file, camera, structure, debug=False):
                 points = ring.GetPointCount()
                 for p in xrange(points):
                     x, y, z = ring.GetPoint(p)
-                    X = np.array([[x], [y], [z]])
 
-                    # ===================================================
-                    # project boundary to image coordinates vec = KRX-KRt
-                    vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
-                    # ===================================================
+                    # Check if point is in bbox
+                    if is_in_bbox(x, y, xmin, xmax, ymin, ymax):
+                        X = np.array([[x], [y], [z]])
 
-                    u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
-                    v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
-                    outring.AddPoint(u, v)
+                        # ===================================================
+                        # project boundary to image coordinates vec = KRX-KRt
+                        vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
+                        # ===================================================
 
-                    if print_calc:
-                        print '3D point: ', X
-                        print 'camera pos: ', camera['t']
-                        print 'rotation: ', camera['R']
-                        print 'matrix: ', camera['K']
-                        print '3D point:', X
-                        print 'camera coords:', vec
-                        print 'u: ', u
-                        print 'v: ', v
-                        print_calc = False
-                        pass
+                        u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
+                        v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
+
+                        # limit point coordinates to keep it from becoming outrageous
+                        u = min(max(u, -.5), .5)
+                        v = min(max(v, -.5), .5)
+                        outring.AddPoint(u, v)
 
                 # add ring to polygon
                 outpoly.AddGeometry(outring)
@@ -159,3 +162,7 @@ def project2d(settings, output_file, camera, structure, debug=False):
     boundary3D = None
 
     pass
+
+
+def is_in_bbox(x, y, xmin, xmax, ymin, ymax):
+    return (x < xmax) & (x > xmin) & (y < ymax) & (y > ymin)

@@ -118,7 +118,7 @@ def readGeoTiff(imfile):
         print ("Image file load FAILED")
         sys.exit(1)
     else:
-        print "Image file loaded successfully."
+        # print "Image file loaded successfully."
         # write image to numpy array
         img = cv2.merge((
             geoimg.GetRasterBand(1).ReadAsArray(),

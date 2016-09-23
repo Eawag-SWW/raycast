@@ -16,7 +16,7 @@ Tools:
  - rasterclipper.py
 Writes:
  - N clipped images, where N is the number of cameras
-    - location: [project home directory]/3_clip_images_2d/[image name]_clipped.tif
+    - location: [project home directory]/3_clip_images_2d/[image name].tif
     - format: TIFF image
 """
 
@@ -30,27 +30,38 @@ from subprocess import call
 
 def clip_images_2d(settings, structure, debug):
     """Clips images with the projected road boundary information"""
+    # todo: read image resolution from tiff metadata
 
     output_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
 
     # Loop through files of projected boundaries
     boundary_folder = os.path.join(settings.values['Global']['working_directory'], structure[1])
 
+    # Count files to work through:
+    file_count = len([name for name in os.listdir('.') if os.path.isfile(name)])
+    file_index = 1
+
     for boundary_file in os.listdir(boundary_folder):
-        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'],boundary_file.split('.')[0]+'.tif')
-        image_file_clipped = os.path.join(output_folder,boundary_file.split('.')[0]+'.tif')
+        if debug:
+            print 'clipping file ' + str(file_index) + ' of ' + str(file_count)
+        file_index += 1
+        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'], boundary_file.split('.')[0]+'.tif')
+        image_file_clipped = os.path.join(output_folder, boundary_file.split('.')[0]+'.tif')
         if os.path.isfile(image_file):
-            # call(["C:\OSGeo4W64\bin\gdalwarp.exe", '-dstnodata 0', '-q', '-cutline ' + os.path.join(boundary_folder, boundary_file),
-            #       '-dstalpha', '-of GTIFF', image_file, image_file_clipped])
-            os.system(settings.values['Global']['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
-                  ' -tr 1e-05 1e-05' + ' -of GTIFF' + ' ' + image_file + ' ' + image_file_clipped)
-            # gdalwarp - q - cutline
-            # C:\Temp\pcdTest\s2_project_boundary_2d\IMG_1000.JPG_boundary2D.json - tr
-            # 1e-05
-            # 1e-05
-            # C:\Users\Matthew\Workspace\raycast\demo_data\images\IMG_1000.tif
-            # with gdal.Open(image_file, gdalconst.GA_ReadOnly) as rast:
-            #     array = rasterclipper.clip_raster(rast, os.path.join(boundary_folder, boundary_file))
+            call(
+                ['gdalwarp.exe',
+                 '-q',
+                 '-cutline', os.path.join(boundary_folder, boundary_file),
+                 '-tr', '1e-05', '1e-05',
+                 '-of', 'GTIFF',
+                 '-overwrite',
+                 image_file,
+                 image_file_clipped],
+                executable=settings.values['Global']['gdalwarp'])
+
+            # os.system(settings.values['Global']['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
+            #       ' -tr 1e-05 1e-05' + ' -of GTIFF' + ' ' + image_file + ' ' + image_file_clipped)
+
 
     return 0
     pass

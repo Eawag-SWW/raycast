@@ -29,8 +29,6 @@ import cv2
 import os
 import numpy as np
 from helpers import readGeoTiff
-from osgeo import ogr, osr
-import sys
 
 
 # Main module function
@@ -70,30 +68,38 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
     image, origin, cell_size, dimensions = readGeoTiff(image_file)
 
     # detect objects
-    bboxes = object_detector.detectMultiScale(image, scaleFactor=1000000, minNeighbors=1)
-    print len(bboxes), ' object(s)'
+    detection_results = object_detector.detectMultiScale3(
+        image,
+        scaleFactor=1000000,
+        minNeighbors=1,
+        outputRejectLevels=True
+    )
+    rects = detection_results[0]
+    neighbors = detection_results[1]
+    score = detection_results[2]
+    print len(rects), ' object(s)'
 
     # save under this filename
     output_file = os.path.join(output_folder, image_name + '.csv')
     # save to csv
-    write_bboxes2csv(bboxes, origin, cell_size, output_file)
+    write_data2csv(rects, score, origin, cell_size, output_file)
 
 
-def write_bboxes2csv(bboxes, origin, cell_size, output_file):
-    '''Writes CSV from a list of rectangle objects. WGS84 32N is not assumed!!!'''
+def write_data2csv(rects, score, origin, cell_size, output_file):
+    '''Writes CSV from a list of rectangle objects.'''
 
-    points = np.empty([len(bboxes), 2])  # 2 columns: x and y
+    points = np.empty([len(rects), 3])  # 2 columns: x and y
 
-    for i in range(len(bboxes)):
-        (x, y, w, h) = bboxes[i]
+    for i in range(len(rects)):
+        (x, y, w, h) = rects[i]
         # Calculate centroid location in image coordinates
         x2d = (x + w / 2) * cell_size[0] + origin[0]
         y2d = (y + h / 2) * cell_size[1] + origin[1]
 
-        # Write to array
-        points[i] = [x2d, y2d]
+        # Write to array, with
+        points[i] = [x2d, y2d, score[i]]
 
         # write to CSV
-        np.savetxt(output_file, points, header="x;y", delimiter=";", comments='')
+        np.savetxt(output_file, points, header="x;y;n", delimiter=";", comments='')
 
     print 'objects written to ', output_file

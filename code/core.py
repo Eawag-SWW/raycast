@@ -68,18 +68,22 @@ def initialize(settings):
         if debug:
             print "processing directory created."
 
-    # check if log file exists
-    with open(os.path.join(working_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
-        lines = log.readlines()
-        # try to read the last line
-        if len(lines) > 0:
-            position = lines[-1]
-            log_append = ' from log file.'
-        else:
-            # If the file is empty, then set a default starting position
-            position = structure[0]
-            log_append = ', chosen as default'
-        pass
+    if settings.values['Global']['startingpoint'] == 'Auto':
+        # check position from log file
+        with open(os.path.join(working_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
+            lines = log.readlines()
+            # try to read the last line
+            if len(lines) > 0:
+                position = lines[-1]
+                log_append = ' from log file.'
+            else:
+                # If the file is empty, then set a default starting position
+                position = structure[0]
+                log_append = ', chosen as default'
+            pass
+    else:
+        position = structure[int(settings.values['Global']['startingpoint'])-1]
+        log_append = ', as defined in settings (use "Auto" to restart processing where left off)'
     # Set up directory structure
     checkdirectorystructure(working_directory)
 

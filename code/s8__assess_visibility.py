@@ -22,3 +22,7 @@ Writes:
  - Pycaster / VTK
 
 """
+
+
+def assess_visibility(settings, structure, debug):
+    return 0

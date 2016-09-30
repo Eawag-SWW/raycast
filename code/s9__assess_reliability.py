@@ -13,3 +13,7 @@ Tasks:
    - 3D cluster statistics (number of hits, density of cluster, number of missing votes)
 
 """
+
+
+def assess_reliability(settings, structure, debug):
+    return 0

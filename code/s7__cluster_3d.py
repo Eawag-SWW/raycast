@@ -26,6 +26,8 @@ import numpy as np
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 import csv
+import sys
+import progressbar
 
 buffer_dist = 0.2
 
@@ -61,6 +63,13 @@ def cluster_3d(settings, structure, debug):
     # do union
     dissolved = cascaded_union(buffers)
 
+    # count clusters
+    cluster_count = 0
+    for c in dissolved:
+        cluster_count += 1
+    if debug:
+        print str(cluster_count) + ' clusters found'
+
     with open(clusters_file, 'wb') as csv_file:
         cluster_writer = csv.writer(csv_file, delimiter=' ',
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -68,7 +77,21 @@ def cluster_3d(settings, structure, debug):
         # Write header
         cluster_writer.writerow(['x', 'y', 'count', 'area', 'avg_score', 'max_score'])
 
+        # Progress bar
+        bar = progressbar.ProgressBar(maxval=cluster_count,
+                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+        i = 1
+        bar.start()
+
+        # Loop through clusters and analyze
         for area in dissolved:
+            if debug:
+                sys.stdout.write('\r')
+                # the exact output you're looking for:
+                sys.stdout.write("[%-20s] %d%%" % ('=' * i, 5 * i))
+                sys.stdout.flush()
+                i += 1
+
             cluster = {
                 'count': 0,
                 'avg_score': 1,
@@ -77,27 +100,28 @@ def cluster_3d(settings, structure, debug):
                 'points': [],
                 'centroid': [area.centroid.x, area.centroid.y]
             }
-            if (area.area > buffer_dist * buffer_dist * 3.14159266) & (area.area < 0.7):
-                # print
-                for point in points:
-                    if area.contains(point['geom']):
-                        cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (cluster['count'] + 1)
-                        cluster['max_score'] = max(cluster['max_score'], float(point['score']))
-                        cluster['count'] += 1
-                        cluster['points'].append(point)
+            # Add points to clusters
+            for point in points:
+                if area.contains(point['geom']):
+                    cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (cluster['count'] + 1)
+                    cluster['max_score'] = max(cluster['max_score'], float(point['score']))
+                    cluster['count'] += 1
+                    cluster['points'].append(point)
 
-                # print cluster
-                # clusters.append(cluster)
-                cluster_writer.writerow([
-                    cluster['centroid'][0],
-                    cluster['centroid'][1],
-                    # cluster['centroid'][2],
-                    cluster['count'],
-                    cluster['area'],
-                    cluster['avg_score'],
-                    cluster['max_score']])
+            # print cluster
+            # clusters.append(cluster)
+            cluster_writer.writerow([
+                cluster['centroid'][0],
+                cluster['centroid'][1],
+                # cluster['centroid'][2],
+                cluster['count'],
+                cluster['area'],
+                cluster['avg_score'],
+                cluster['max_score']])
 
-        # print dissolved
+        bar.finish()
+
+    return 0
 
 
 

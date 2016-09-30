@@ -6,21 +6,22 @@ import os
 
 import helpers
 
-from s1_project_boundary_3d import *
-from s2_project_boundary_2d import *
-from s3_clip_images_2d import *
-from s4_detect_objects_2d import *
-from s5_cluster_2d import *
-from s6_cast_rays_3d import *
-from s7_cluster_3d import *
-from s8_assess_visibility import *
-from s9_assess_reliability import *
+from s1__project_boundary_3d import *
+from s2__project_boundary_2d import *
+from s3__clip_images_2d import *
+from s4__detect_objects_2d import *
+from s5__cluster_2d import *
+from s6__cast_rays_3d import *
+from s7__cluster_3d import *
+from s8__assess_visibility import *
+from s9__assess_reliability import *
+from s10__evaluate_detection import *
 
 
 # Global variables
 debug = True
-structure = ['s1_project_boundary_3d', 's2_project_boundary_2d', 's3_clip_images_2d', 's4_detect_objects_2d',
-             's5_cluster_2d', 's6_cast_rays_3d', 's7_cluster_3d', 's8_assess_visibility', 's9_assess_reliability']
+structure = ['s1__project_boundary_3d', 's2__project_boundary_2d', 's3__clip_images_2d', 's4__detect_objects_2d',
+             's5__cluster_2d', 's6__cast_rays_3d', 's7__cluster_3d', 's8__assess_visibility', 's9__assess_reliability', 's10__evaluate_detection']
 current_position = structure[0]
 
 
@@ -44,7 +45,7 @@ def main():
     for step in steps_to_execute:
         helpers.write_to_log(settings=settings, line=step)
         print '### ' + step
-        r = globals()[step[3:]](settings, structure, debug)
+        r = globals()[step.split('__')[1]](settings, structure, debug)
         if r != 0:
             break
 

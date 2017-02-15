@@ -22,13 +22,14 @@ import ogr
 import osr
 import helpers
 import os
+import default_settings as settings
 
 
-def project_boundary_3d(settings, structure, debug):
+def project_boundary_3d(structure, debug):
 
     # read data from file
-    boundary2D = helpers.load_shape(settings.values['Inputs']['boundary_file'], debug=debug)
-    dem_dataset = gdal.Open(settings.values['Inputs']['demfile'])
+    boundary2D = helpers.load_shape(settings.inputs['boundary_file'], debug=debug)
+    dem_dataset = gdal.Open(settings.inputs['demfile'])
     dem_rasterband = dem_dataset.GetRasterBand(1)
     dem_geotransform = dem_dataset.GetGeoTransform()
 
@@ -39,11 +40,11 @@ def project_boundary_3d(settings, structure, debug):
 
     # create the spatial reference
     srs = osr.SpatialReference()
-    srs.ImportFromEPSG(int(settings.values['Global']['epsg']))
+    srs.ImportFromEPSG(int(settings.general['epsg']))
 
     # Create new file
     # Create new, even if the last already exists, because otherwise there are problems
-    filename = os.path.join(settings.values['Global']['working_directory'], structure[0], 'boundary3D.json')
+    filename = os.path.join(settings.general['working_directory'], structure[0], 'boundary3D.json')
     if os.path.exists(filename):
         driver.DeleteDataSource(filename)
     dataSource = driver.CreateDataSource(filename)

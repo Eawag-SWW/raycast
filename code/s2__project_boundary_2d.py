@@ -33,22 +33,23 @@ import ogr
 import helpers
 import os
 import numpy as np
+import default_settings as settings
 
 
-def project_boundary_2d(settings, structure, debug):
+def project_boundary_2d(structure, debug):
     """Projects 3D boundary into coordinate systems of 2D images."""
 
     # Read image calibration parameters
-    params = helpers.read_camera_params(settings.values['Inputs']['camera_xyz_offset'], settings.values['Inputs']['camera_params'])
+    params = helpers.read_camera_params(settings.inputs['camera_xyz_offset'], settings.inputs['camera_params'])
 
     # Loop through images, project, clip, save
     for camera in params:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
-        output_file = os.path.join(settings.values['Global']['working_directory'], structure[1],
+        output_file = os.path.join(settings.general['working_directory'], structure[1],
                                    camera_name + '_boundary2D.json')
         # project and save
-        project2d(settings, output_file, camera, structure, debug=debug)
+        project2d(output_file, camera, structure, debug=debug)
 
         pass
 
@@ -57,7 +58,7 @@ def project_boundary_2d(settings, structure, debug):
     pass
 
 
-def project2d(settings, output_file, camera, structure, debug=False):
+def project2d(output_file, camera, structure, debug=False):
     if debug:
         print 'working on ', output_file
 
@@ -68,16 +69,16 @@ def project2d(settings, output_file, camera, structure, debug=False):
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
 
     # create bounding box for clipping
-    xmin = float(camera['t'][0][0]) - int(settings.values['Image Clipping']['image_ground_size'])
-    xmax = float(camera['t'][0][0]) + int(settings.values['Image Clipping']['image_ground_size'])
-    ymin = float(camera['t'][1][0]) - int(settings.values['Image Clipping']['image_ground_size'])
-    ymax = float(camera['t'][1][0]) + int(settings.values['Image Clipping']['image_ground_size'])
+    xmin = float(camera['t'][0][0]) - int(settings.image_clipping['image_ground_size'])
+    xmax = float(camera['t'][0][0]) + int(settings.image_clipping['image_ground_size'])
+    ymin = float(camera['t'][1][0]) - int(settings.image_clipping['image_ground_size'])
+    ymax = float(camera['t'][1][0]) + int(settings.image_clipping['image_ground_size'])
 
     # Load 3D boundary
     # Todo: I tried externalizing the loading of the shape so that it didn't have to be done for each image. However,
     # only the projection for the first image would work - the other were returned empty.
     boundary3D = helpers.load_shape(os.path.join(
-        settings.values['Global']['working_directory'],
+        settings.general['working_directory'],
         structure[0],
         'boundary3D.json'), driver='GeoJSON', debug=debug)
 
@@ -86,7 +87,7 @@ def project2d(settings, output_file, camera, structure, debug=False):
 
     # create the spatial reference
     # srs = osr.SpatialReference()
-    # srs.ImportFromEPSG(int(settings.values['Global']['epsg']))
+    # srs.ImportFromEPSG(int(settings.general['epsg']))
 
     # Create new file
     # Create new, even if the last already exists, because otherwise there are problems
@@ -129,8 +130,8 @@ def project2d(settings, output_file, camera, structure, debug=False):
                         vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
                         # ===================================================
 
-                        u = float(settings.values['Inputs']['image_pixel_x'])*vec[0, 0] / vec[2, 0]
-                        v = float(settings.values['Inputs']['image_pixel_y'])*vec[1, 0] / vec[2, 0]
+                        u = float(settings.inputs['image_pixel_x'])*vec[0, 0] / vec[2, 0]
+                        v = float(settings.inputs['image_pixel_y'])*vec[1, 0] / vec[2, 0]
 
                         # limit point coordinates to keep it from becoming outrageous
                         u = min(max(u, -.5), .5)

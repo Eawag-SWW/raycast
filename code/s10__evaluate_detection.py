@@ -16,35 +16,36 @@ import csv
 import os
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
+import default_settings as settings
 
 
-def evaluate_detection(settings, structure, debug):
-    if not settings.values['Evaluation']['do_evaluation']:
+def evaluate_detection(structure, debug):
+    if not settings.evaluation['do_evaluation']:
         return 0
 
     positives = []
     buffers = []
     evaluated_clusters = []
 
-    evaluated_results_file = os.path.join(settings.values['Global']['working_directory'], structure[9], '3dclusters_evaluated.csv')
+    evaluated_results_file = os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv')
 
     # Load ground truth
-    ground_truth_file = settings.values['Inputs']['ground_truth']
+    ground_truth_file = settings.inputs['ground_truth']
     # read data and create buffers
     with open(ground_truth_file, 'rb') as f:
-        reader = csv.DictReader(f, delimiter=settings.values['Inputs']['ground_truth_csv_delimiter'])
+        reader = csv.DictReader(f, delimiter=settings.inputs['ground_truth_csv_delimiter'])
         for row in reader:
             point = Point(float(row['x']), float(row['y']))
             positives.append(point)
             # create buffer
 
-            buffers.append(point.buffer(float(settings.values['Evaluation']['acceptance_radius'])))
+            buffers.append(point.buffer(float(settings.evaluation['acceptance_radius'])))
 
     # Union all buffers
     buffers = cascaded_union(buffers)
 
     # Load clusters
-    clusters_file = os.path.join(settings.values['Global']['working_directory'], structure[6], '3dclusters.csv')
+    clusters_file = os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv')
     # read data and create buffers
     with open(clusters_file, 'rb') as f:
         reader = csv.DictReader(f, delimiter=' ')

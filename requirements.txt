@@ -1,0 +1,4 @@
+gdal
+progressbar
+numpy
+shapely

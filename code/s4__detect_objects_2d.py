@@ -29,19 +29,19 @@ import cv2
 import os
 import numpy as np
 from helpers import readGeoTiff
-
+import default_settings as settings
 
 # Main module function
-def detect_objects_2d(settings, structure, debug):
+def detect_objects_2d(structure, debug):
 
     # clipped images from previous task are stored here
-    image_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
+    image_folder = os.path.join(settings.general['working_directory'], structure[2])
 
     # detected locations should be stored here
-    output_folder = os.path.join(settings.values['Global']['working_directory'], structure[3])
+    output_folder = os.path.join(settings.general['working_directory'], structure[3])
 
     # classifier data found here
-    classifier_xml = settings.values['Inputs']['classifier_default']
+    classifier_xml = settings.inputs['classifier_default']
 
     # loop through each image
     for image_file in os.listdir(image_folder):

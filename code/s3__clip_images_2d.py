@@ -20,22 +20,20 @@ Writes:
     - format: TIFF image
 """
 
-import helpers
+
 import os
-import gdal
-import rasterclipper
-import gdalconst
 from subprocess import call
+import default_settings as settings
 
 
-def clip_images_2d(settings, structure, debug):
+def clip_images_2d(structure, debug):
     """Clips images with the projected road boundary information"""
     # todo: read image resolution from tiff metadata
 
-    output_folder = os.path.join(settings.values['Global']['working_directory'], structure[2])
+    output_folder = os.path.join(settings.general['working_directory'], structure[2])
 
     # Loop through files of projected boundaries
-    boundary_folder = os.path.join(settings.values['Global']['working_directory'], structure[1])
+    boundary_folder = os.path.join(settings.general['working_directory'], structure[1])
 
     # Count files to work through:
     file_count = len([name for name in os.listdir('.') if os.path.isfile(name)])
@@ -45,7 +43,7 @@ def clip_images_2d(settings, structure, debug):
         if debug:
             print 'clipping file ' + str(file_index) + ' of ' + str(file_count)
         file_index += 1
-        image_file = os.path.join(settings.values['Inputs']['undistorted_image_folder'], boundary_file.split('.')[0]+'.tif')
+        image_file = os.path.join(settings.inputs['undistorted_image_folder'], boundary_file.split('.')[0]+'.tif')
         image_file_clipped = os.path.join(output_folder, boundary_file.split('.')[0]+'.tif')
         if os.path.isfile(image_file):
             call(
@@ -57,9 +55,9 @@ def clip_images_2d(settings, structure, debug):
                  '-overwrite',
                  image_file,
                  image_file_clipped],
-                executable=settings.values['Global']['gdalwarp'])
+                executable=settings.general['gdalwarp'])
 
-            # os.system(settings.values['Global']['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
+            # os.system(settings.general['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
             #       ' -tr 1e-05 1e-05' + ' -of GTIFF' + ' ' + image_file + ' ' + image_file_clipped)
 
 

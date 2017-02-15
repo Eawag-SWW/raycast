@@ -28,17 +28,19 @@ from shapely.ops import cascaded_union
 import csv
 import sys
 import progressbar
+import default_settings as settings
 
 buffer_dist = 0.2
 
-def cluster_3d(settings, structure, debug):
+
+def cluster_3d(structure, debug):
 
     # Where to get points from
-    points_file = os.path.join(settings.values['Global']['working_directory'], structure[5], '3dpoints.csv')
+    points_file = os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv')
 
     # Where to save clusters
-    save_to_directory = os.path.join(settings.values['Global']['working_directory'], structure[6])
-    clusters_file = os.path.join(settings.values['Global']['working_directory'], structure[6], '3dclusters.csv')
+    save_to_directory = os.path.join(settings.general['working_directory'], structure[6])
+    clusters_file = os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv')
 
     # points = np.loadtxt(points_file)
 

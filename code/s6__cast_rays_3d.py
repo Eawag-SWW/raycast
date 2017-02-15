@@ -32,18 +32,19 @@ import vtk
 import numpy as np
 import helpers
 import csv
+import default_settings as settings
 
 
-def cast_rays_3d(settings, structure, debug):
+def cast_rays_3d(structure, debug):
 
     # Where to find the 2D clusters
-    cluster_folder = os.path.join(settings.values['Global']['working_directory'], structure[3])
+    cluster_folder = os.path.join(settings.general['working_directory'], structure[3])
 
     # Where to store 3D points in memory
     # points_3d = np.empty([1, 5])
 
     # Where to save 3D points
-    output_file = os.path.join(settings.values['Global']['working_directory'], structure[5], '3dpoints.csv')
+    output_file = os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv')
 
     # Start saving data
     with open(output_file, 'wb') as csv_file:
@@ -54,15 +55,15 @@ def cast_rays_3d(settings, structure, debug):
 
         # Get camera calibration information
         camera_params = helpers.read_camera_params(
-            settings.values['Inputs']['camera_xyz_offset'],
-            settings.values['Inputs']['camera_params'])
+            settings.inputs['camera_xyz_offset'],
+            settings.inputs['camera_params'])
 
         # Load 3D mesh
         print 'Loading 3D mesh...'
-        mesh = loadSTL(settings.values['Inputs']['3dmesh'])
+        mesh = loadSTL(settings.inputs['3dmesh'])
 
         # Load mesh offset
-        with open(settings.values['Inputs']['3dmesh_offset'], 'r') as offsetfile:
+        with open(settings.inputs['3dmesh_offset'], 'r') as offsetfile:
             mesh_offset = np.array(map(float, offsetfile.readlines()[0].split()))
 
         # build OBB tree for fast intersection search
@@ -103,8 +104,8 @@ def cast_rays_3d(settings, structure, debug):
 
                 # Step 1: project to 3D space
                 X2d = np.array([
-                    [cluster[0]*zval/float(settings.values['Inputs']['image_pixel_x'])],
-                    [cluster[1]*zval/float(settings.values['Inputs']['image_pixel_y'])],
+                    [cluster[0]*zval/float(settings.inputs['image_pixel_x'])],
+                    [cluster[1]*zval/float(settings.inputs['image_pixel_y'])],
                     [zval]])
                 X3d = np.dot(KRinv, (X2d + KRt))
 

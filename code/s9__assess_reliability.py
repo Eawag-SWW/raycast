@@ -15,5 +15,5 @@ Tasks:
 """
 
 
-def assess_reliability(settings, structure, debug):
+def assess_reliability(structure, debug):
     return 0

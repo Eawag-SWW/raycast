@@ -96,10 +96,10 @@ def initialize():
 
 def checkdirectorystructure(home):
     # tests and creates directory structure
-    for directory in structure:
+    for directory in structure + [settings.general['iterations_subdir']]:
         if not os.path.exists(os.path.join(home, directory)):
             os.makedirs(os.path.join(home, directory))
-            if debug: print  "directory created: {directory}".format(directory=directory)
+            if debug: print "directory created: {directory}".format(directory=directory)
     pass
 
 

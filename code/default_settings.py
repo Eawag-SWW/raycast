@@ -1,8 +1,10 @@
 general = {
-    "working_directory": "C:/temp/pcdTest",
+    "working_directory": "C:/temp/pcdTestSmall",
+    "iterations_subdir": "iterations",
     "startingpoint": "Auto",
     "epsg": 21781,
     "gdalwarp": "C:/Program Files/QGIS Essen/bin/gdalwarp.exe",
+    "opencv": "C:/opt/opencv/build/x64/vc14/bin"
 }
 inputs = {
     "boundary_file": "../demo_data/boundary/boundary2D.shp",
@@ -32,4 +34,21 @@ clustering_3d = {
 evaluation = {
     "do_evaluation": True,
     "acceptance_radius": 0.4,
+}
+training_images = {
+    'width': 24,
+    'height': 24
+}
+haarClassiferArgs = {
+        'numStages': 15,
+        'precalcValBufSize': 12000,
+        'precalcIdxBufSize': 12000,
+        'featureType': 'Haar',
+        'minHitRate': 0.99,
+        'weightTrimRate': 0.95,
+        'maxDepth': 1,
+        'maxWeakCount': 20
+    }
+classifer_training = {
+
 }

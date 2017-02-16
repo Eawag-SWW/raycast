@@ -76,18 +76,10 @@ def cluster_3d(structure, debug):
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         # Write header
-        cluster_writer.writerow(['x', 'y', 'count', 'area', 'avg_score', 'max_score'])
-
-        i=1
+        cluster_writer.writerow(['x', 'y', 'count', 'area', 'avg_score', 'max_score', 'density'])
 
         # Loop through clusters and analyze
         for area in dissolved:
-            if debug:
-                sys.stdout.write('\r')
-                # the exact output you're looking for:
-                sys.stdout.write("[%-20s] %d%%" % ('=' * i, 5 * i))
-                sys.stdout.flush()
-                i += 1
 
             cluster = {
                 'count': 0,
@@ -114,8 +106,8 @@ def cluster_3d(structure, debug):
                 cluster['count'],
                 cluster['area'],
                 cluster['avg_score'],
-                cluster['max_score']])
-
+                cluster['max_score'],
+                cluster['count']/cluster['area']])
 
     return 0
 

@@ -53,6 +53,8 @@ def evaluate_candidates(structure, debug):
                   buffers,
                   os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv'))
 
+    return 0
+
 
 def evaluate_file(candidate_file, buffered_truth, file_out):
     evaluated_clusters = []
@@ -72,3 +74,4 @@ def evaluate_file(candidate_file, buffered_truth, file_out):
             result_writer.writeheader()
             result_writer.writerows(evaluated_clusters)
 
+    return 0

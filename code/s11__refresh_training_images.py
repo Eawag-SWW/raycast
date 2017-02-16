@@ -18,7 +18,7 @@ import os
 import default_settings as settings
 from scipy import ndimage
 from scipy import misc
-import skimage
+import sys
 
 
 def refresh_training_images(structure, debug):
@@ -40,13 +40,17 @@ def refresh_training_images(structure, debug):
 
     # for each image, do clipping
     for image_name in list(candidates['image']):
+        print 'working on image %s' % image_name
         # Load image
         image = ndimage.imread(os.path.join(settings.inputs['undistorted_image_folder'], image_name + '.tif'),
                                flatten=True)
-
+        print 'image loaded'
         # Process candidates from that image
         filtered_cd = candidates[candidates['image'] == image_name]
+        print 'clipping samples'
         for index, cd in filtered_cd.iterrows():
+            sys.stdout.write('.')
+            # sys.stdout.flush()
             # Clip image
             # Make box
             box_left = cd['img_x'] - settings.training_images['width'] / 2
@@ -66,11 +70,11 @@ def refresh_training_images(structure, debug):
     # save list of file names
     for directory in ['positives', 'negatives']:
         img_list = os.listdir(os.path.join(
-            settings.general['working_directory'],
-            structure[10], directory, 'img'))
+            iteration_dir, directory, 'img'))
         list_file = open(os.path.join(iteration_dir, directory, "info.dat"), "w+")
         for path in img_list:
-            list_file.writelines(os.path.join('img', "%s\n" % path))
+            list_file.writelines(os.path.join('img', "{} 1 0 0 {} {}\n".format(
+                path, settings.training_images['width'], settings.training_images['height'])))
         list_file.close()
 
     return 0

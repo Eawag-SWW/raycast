@@ -1,5 +1,5 @@
 general = {
-    "working_directory": "C:/temp/pcdTestSmall",
+    "working_directory": "C:/temp/pcdTest",
     "iterations_subdir": "iterations",
     "startingpoint": "Auto",
     "epsg": 21781,

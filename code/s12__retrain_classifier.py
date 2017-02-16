@@ -24,7 +24,7 @@ def retrain_classifier(structure, debug):
 
     positives_dat_path = os.path.join(current_iter_dir, 'positives', 'info.dat')
     positives_xml_path = os.path.join(current_iter_dir, 'positives', 'positives.xml')
-    positives_numsamples = os.listdir(os.path.join(current_iter_dir, 'positives', 'img'))
+    positives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'positives', 'img')))
 
     # create positive examples xml
     call(args=['opencv_createsamples.exe',
@@ -33,7 +33,7 @@ def retrain_classifier(structure, debug):
                '-w', str(settings.training_images['width']),
                '-h', str(settings.training_images['height']),
                '-num', str(positives_numsamples)],
-         executable=os.path.join(settings.general['opencv'], 'bin', 'opencv_createsamples.exe'))
+         executable=os.path.join(settings.general['opencv'], 'opencv_createsamples.exe'))
 
     # convert settings into list
     args = []

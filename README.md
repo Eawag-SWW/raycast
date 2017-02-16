@@ -18,7 +18,7 @@ Most modules needed for raycast can be installed with pip, but the following nee
  - shapely: http://www.lfd.uci.edu/~gohlke/pythonlibs/#shapely (geospatial functions)
  - vtk: http://www.lfd.uci.edu/~gohlke/pythonlibs/#vtk (ray casting functions)
 
-This tutorial for gdal shows how it's done for gdal: https://pythongisandstuff.wordpress.com/2016/04/13/installing-gdal-ogr-for-python-on-windows/
+This tutorial for gdal shows how it's done: https://pythongisandstuff.wordpress.com/2016/04/13/installing-gdal-ogr-for-python-on-windows/
 
 OpenCV needs to be installed separately:
 https://sourceforge.net/projects/opencvlibrary/files/

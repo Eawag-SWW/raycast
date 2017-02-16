@@ -10,3 +10,10 @@ Tasks:
  - For each image, clip out all negative samples and apply transformations to increase diversity
 
 """
+
+
+import csv
+import os
+
+def refresh_training_images(structure, debug):
+    return 0

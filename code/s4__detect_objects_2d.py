@@ -88,7 +88,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
 def write_data2csv(rects, score, origin, cell_size, output_file):
     '''Writes CSV from a list of rectangle objects.'''
 
-    points = np.empty([len(rects), 3])  # 2 columns: x and y
+    points = np.empty([len(rects), 4])  # 4 columns: x and y, score, and id
 
     for i in range(len(rects)):
         (x, y, w, h) = rects[i]
@@ -97,9 +97,9 @@ def write_data2csv(rects, score, origin, cell_size, output_file):
         y2d = (y + h / 2) * cell_size[1] + origin[1]
 
         # Write to array, with
-        points[i] = [x2d, y2d, score[i]]
+        points[i] = [x2d, y2d, score[i], i]
 
         # write to CSV
-        np.savetxt(output_file, points, header="x;y;n", delimiter=";", comments='')
+        np.savetxt(output_file, points, header="x;y;n;id", delimiter=";", comments='')
 
     print 'objects written to ', output_file

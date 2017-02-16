@@ -11,14 +11,14 @@ from s6__cast_rays_3d import *
 from s7__cluster_3d import *
 from s8__assess_visibility import *
 from s9__assess_reliability import *
-from s10__evaluate_detection import *
+from s10__evaluate_candidates import *
 
 import default_settings as settings
 
 # Global variables
 debug = True
 structure = ['s1__project_boundary_3d', 's2__project_boundary_2d', 's3__clip_images_2d', 's4__detect_objects_2d',
-             's5__cluster_2d', 's6__cast_rays_3d', 's7__cluster_3d', 's8__assess_visibility', 's9__assess_reliability', 's10__evaluate_detection']
+             's5__cluster_2d', 's6__cast_rays_3d', 's7__cluster_3d', 's8__assess_visibility', 's9__assess_reliability', 's10__evaluate_candidates']
 current_position = structure[0]
 
 

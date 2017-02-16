@@ -19,7 +19,7 @@ from shapely.ops import cascaded_union
 import default_settings as settings
 
 
-def evaluate_detection(structure, debug):
+def evaluate_candidates(structure, debug):
     if not settings.evaluation['do_evaluation']:
         return 0
 

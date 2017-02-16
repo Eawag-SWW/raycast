@@ -51,7 +51,7 @@ def cast_rays_3d(structure, debug):
 
         point_writer = csv.writer(csv_file, delimiter=' ',
                      quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        point_writer.writerow(['x', 'y', 'z', 'score', 'id', 'image'])
+        point_writer.writerow(['x', 'y', 'z', 'score', 'id', 'image', 'img_x', 'img_y'])
 
         # Get camera calibration information
         camera_params = helpers.read_camera_params(
@@ -124,8 +124,10 @@ def cast_rays_3d(structure, debug):
                         y + mesh_offset[1],
                         z + mesh_offset[2],
                         cluster[2],  # the score of the cluster
-                        cluster[3],  # the id of the cluster
-                        cluster_list_file.split('.')[0]])  # the image in which the cluster was detected
+                        int(cluster[3]),  # the id of the cluster
+                        cluster_list_file.split('.')[0],  # the image in which the cluster was detected
+                        int(X2d[0][0]/zval),  # image coordinates
+                        int(X2d[1][0]/zval)])
                     # points_3d = np.append(points_3d, new_point_3d, axis=0)
                     # point_writer.writerow(new_point_3d)
 

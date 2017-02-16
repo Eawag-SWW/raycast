@@ -19,7 +19,11 @@ Most modules needed for raycast can be installed with pip, but the following nee
  - vtk: http://www.lfd.uci.edu/~gohlke/pythonlibs/#vtk (ray casting functions)
 
 This tutorial for gdal shows how it's done for gdal: https://pythongisandstuff.wordpress.com/2016/04/13/installing-gdal-ogr-for-python-on-windows/
- 
- 
+
+OpenCV needs to be installed separately:
+https://sourceforge.net/projects/opencvlibrary/files/
+http://docs.opencv.org/3.0-beta/doc/py_tutorials/py_setup/py_setup_in_windows/py_setup_in_windows.html#install-opencv-python-in-windows
+
+
 ## Method
 ![Framework diagram](docs/images/diagram.png?raw=true "Method of framework")

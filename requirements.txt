@@ -1,4 +1,3 @@
 gdal
-progressbar
 numpy
 shapely

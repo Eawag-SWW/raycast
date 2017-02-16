@@ -27,7 +27,6 @@ from shapely.geometry import Point
 from shapely.ops import cascaded_union
 import csv
 import sys
-import progressbar
 import default_settings as settings
 
 buffer_dist = 0.2
@@ -56,8 +55,7 @@ def cluster_3d(structure, debug):
             points.append({
                 'geom': point,
                 'score': row['score'],
-                'image': row['image'],
-                'id': row['id']
+                'image': row['image']
             })
             # create buffer
             buffer = point.buffer(buffer_dist)
@@ -80,21 +78,16 @@ def cluster_3d(structure, debug):
         # Write header
         cluster_writer.writerow(['x', 'y', 'count', 'area', 'avg_score', 'max_score'])
 
-        # Progress bar
-        bar = progressbar.ProgressBar(maxval=cluster_count,
-                                      widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage(), progressbar.ETA()]).start()
-        i = 1
+        i=1
+
         # Loop through clusters and analyze
         for area in dissolved:
-            # if debug:
-            # sys.stdout.write('\r')
-            # the exact output you're looking for:
-            # sys.stdout.write("[%-20s] %d%%" % ('=' * i, 5 * i))
-            # sys.stdout.flush()
-            # i += 1
-
-            # bar.update(i)
-            # i += i
+            if debug:
+                sys.stdout.write('\r')
+                # the exact output you're looking for:
+                sys.stdout.write("[%-20s] %d%%" % ('=' * i, 5 * i))
+                sys.stdout.flush()
+                i += 1
 
             cluster = {
                 'count': 0,
@@ -112,8 +105,6 @@ def cluster_3d(structure, debug):
                     cluster['count'] += 1
                     cluster['points'].append(point)
 
-            # calculate density
-            cluster['density'] = cluster['count']/cluster['area']
             # print cluster
             # clusters.append(cluster)
             cluster_writer.writerow([
@@ -125,7 +116,6 @@ def cluster_3d(structure, debug):
                 cluster['avg_score'],
                 cluster['max_score']])
 
-        bar.finish()
 
     return 0
 

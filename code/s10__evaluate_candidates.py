@@ -1,14 +1,13 @@
 """
 Args:
- - 3D detection results
+ - evaluate results based on truth file
 Writes:
- -
-   - location: [project home directory]/9_assess_reliability/
+ - each point or cluster candidate is evaluated and tagged as correct or incorrect
+   - location: [project home directory]/10_evaluate_candidates/
    - format: TO BE DEFINED
 Tasks:
- - Compute an overall reliability of each cluster by assigning weights to
-   - 2D cluster statistics (number of hits, density of cluster)
-   - 3D cluster statistics (number of hits, density of cluster, number of missing votes)
+ - Evaluate the results of the object detection by comparing the 3D candidates to the reference data
+ - Evaluate the results of the statistical binary model
 
 """
 
@@ -25,11 +24,11 @@ def evaluate_candidates(structure, debug):
 
     positives = []
     buffers = []
-    evaluated_clusters = []
 
-    evaluated_results_file = os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv')
+    # evaluated_results_file = os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv')
 
-    # Load ground truth
+    # 1. LOAD GROUND TRUTH
+
     ground_truth_file = settings.inputs['ground_truth']
     # read data and create buffers
     with open(ground_truth_file, 'rb') as f:
@@ -41,25 +40,35 @@ def evaluate_candidates(structure, debug):
 
             buffers.append(point.buffer(float(settings.evaluation['acceptance_radius'])))
 
-    # Union all buffers
+    # Union all buffers into one multipolygon
     buffers = cascaded_union(buffers)
 
-    # Load clusters
-    clusters_file = os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv')
-    # read data and create buffers
-    with open(clusters_file, 'rb') as f:
+    # 2. TEST WHETHER CANDIDATES FALL WITHIN BUFFERS OF GROUND TRUTH
+    # a. point candidates
+    evaluate_file(os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv'),
+                  buffers,
+                  os.path.join(settings.general['working_directory'], structure[9], '3dpoints_evaluated.csv'))
+    # b. clusters
+    evaluate_file(os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv'),
+                  buffers,
+                  os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv'))
+
+
+def evaluate_file(candidate_file, buffered_truth, file_out):
+    evaluated_clusters = []
+    # Load candidates
+    with open(candidate_file, 'rb') as f:
         reader = csv.DictReader(f, delimiter=' ')
         for row in reader:
+            # Test whether the candidate is close to ground truth
             point = Point(float(row['x']), float(row['y']))
-            row['is_match'] = 1 if point.within(buffers) else 0
+            row['is_match'] = 1 if point.within(buffered_truth) else 0
             evaluated_clusters.append(row)
 
-        # Write to file
-        with open(evaluated_results_file, 'wb') as csv_file:
+        # Write evaluated candidates to file
+        with open(file_out, 'wb') as csv_file:
             result_writer = csv.DictWriter(csv_file, delimiter=' ', fieldnames=evaluated_clusters[0].keys(),
                                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
             result_writer.writeheader()
             result_writer.writerows(evaluated_clusters)
-
-
 

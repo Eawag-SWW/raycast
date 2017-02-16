@@ -12,13 +12,16 @@ from s7__cluster_3d import *
 from s8__assess_visibility import *
 from s9__assess_reliability import *
 from s10__evaluate_candidates import *
-
+from s11__refresh_training_images import *
+from s12__retrain_classifier import *
+from s13__retrain_binary_model import *
 import default_settings as settings
 
 # Global variables
 debug = True
 structure = ['s1__project_boundary_3d', 's2__project_boundary_2d', 's3__clip_images_2d', 's4__detect_objects_2d',
-             's5__cluster_2d', 's6__cast_rays_3d', 's7__cluster_3d', 's8__assess_visibility', 's9__assess_reliability', 's10__evaluate_candidates']
+             's5__cluster_2d', 's6__cast_rays_3d', 's7__cluster_3d', 's8__assess_visibility', 's9__assess_reliability',
+             's10__evaluate_candidates', 's11__refresh_training_images', 's12__retrain_classifier', 's13__retrain_binary_model']
 current_position = structure[0]
 
 
@@ -78,7 +81,7 @@ def initialize():
                 log_append = ', chosen as default'
             pass
     else:
-        position = structure[int(settings.general['startingpoint'])-1]
+        position = structure[int(settings.general['startingpoint']) - 1]
         log_append = ', as defined in settings (use "Auto" to restart processing where left off)'
     # Set up directory structure
     checkdirectorystructure(working_directory)
@@ -98,7 +101,6 @@ def checkdirectorystructure(home):
             os.makedirs(os.path.join(home, directory))
             if debug: print  "directory created: {directory}".format(directory=directory)
     pass
-
 
 
 # run program

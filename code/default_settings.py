@@ -40,15 +40,17 @@ training_images = {
     'height': 24
 }
 haarClassiferArgs = {
-        'numStages': 15,
-        'precalcValBufSize': 12000,
-        'precalcIdxBufSize': 12000,
-        'featureType': 'Haar',
-        'minHitRate': 0.99,
-        'weightTrimRate': 0.95,
-        'maxDepth': 1,
-        'maxWeakCount': 20
-    }
+    'numStages': 3,
+    'precalcValBufSize': 12000,
+    'precalcIdxBufSize': 12000,
+    'featureType': 'Haar',
+    'minHitRate': 0.999,
+    'weightTrimRate': 0.95,
+    'maxDepth': 1,
+    'maxWeakCount': 20,
+    'bt': 'GAB',
+    'mode': 'ALL'
+}
 classifer_training = {
 
 }

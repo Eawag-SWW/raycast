@@ -25,7 +25,7 @@ def retrain_classifier(structure, debug):
     positives_dat_path = os.path.join(current_iter_dir, 'positives', 'info.dat')
     negatives_dat_path = os.path.join(current_iter_dir, 'negatives', 'info.dat')
     positives_xml_path = os.path.join(current_iter_dir, 'positives', 'positives.xml')
-    positives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'positives', 'img')))-5
+    positives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'positives', 'img')))
     negatives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'negatives', 'img')))
 
     # create positive examples xml
@@ -50,13 +50,13 @@ def retrain_classifier(structure, debug):
     for key, value in settings.haarClassiferArgs.iteritems():
         args.append('-'+key)
         args.append(str(value))
-    args.extend(['-numPos', str(positives_numsamples)])
+    args.extend(['-numPos', str(positives_numsamples-10)])
     args.extend(['-numNeg', str(negatives_numsamples)])
 
     print args
     # Call script to create train classifier
-    # logfile = open(os.path.join(current_iter_dir, 'log_training.txt'), 'w+')
-    call(args=args, executable=os.path.join(settings.general['opencv'], 'opencv_traincascade.exe'))
-    # logfile.close()
+    logfile = open(os.path.join(current_iter_dir, 'log_training.txt'), 'w+')
+    call(args=args, executable=os.path.join(settings.general['opencv'], 'opencv_traincascade.exe'), stdout=logfile)
+    logfile.close()
 
     return 1

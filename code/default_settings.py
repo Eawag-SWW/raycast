@@ -12,8 +12,8 @@ inputs = {
     "3dmesh": "../demo_data/mesh/adliswil_mesh_blender.stl",
     "3dmesh_offset": "../demo_data/mesh/mesh_offset.xyz",
     "classifier_default": "../demo_data/classifier/demo_classifier.xml",
-    # "undistorted_image_folder": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/undistorted_images",
-    "undistorted_image_folder": "../demo_data/images",
+    "undistorted_image_folder": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/undistorted_images",
+    # "undistorted_image_folder": "../demo_data/images",
     "camera_params": "../demo_data/image_params/l1_calibrated_camera_parameters.txt",
     "camera_xyz_offset": "../demo_data/image_params/l1_offset.xyz",
     "image_pixel_x": 0.00001,
@@ -40,11 +40,11 @@ training_images = {
     'height': 24
 }
 haarClassiferArgs = {
-    'numStages': 3,
-    'precalcValBufSize': 12000,
-    'precalcIdxBufSize': 12000,
+    'numStages': 15,
+    'precalcValBufSize': 4048,
+    'precalcIdxBufSize': 4048,
     'featureType': 'Haar',
-    'minHitRate': 0.999,
+    'minHitRate': 0.99,
     'weightTrimRate': 0.95,
     'maxDepth': 1,
     'maxWeakCount': 20,

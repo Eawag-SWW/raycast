@@ -40,11 +40,12 @@ training_images = {
     'height': 24
 }
 haarClassiferArgs = {
-    'numStages': 15,
+    'numStages': 4,
     'precalcValBufSize': 4048,
     'precalcIdxBufSize': 4048,
     'featureType': 'Haar',
-    'minHitRate': 0.99,
+    'minHitRate': 0.98,
+    'maxFalseAlarmRate': 0.5,
     'weightTrimRate': 0.95,
     'maxDepth': 1,
     'maxWeakCount': 20,
@@ -52,5 +53,5 @@ haarClassiferArgs = {
     'mode': 'ALL'
 }
 classifer_training = {
-
+    'positive_sample_ratio': 0.85  # Not all positive samples should be used because some will be discarded during training
 }

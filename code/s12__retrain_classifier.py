@@ -50,13 +50,13 @@ def retrain_classifier(structure, debug):
     for key, value in settings.haarClassiferArgs.iteritems():
         args.append('-'+key)
         args.append(str(value))
-    args.extend(['-numPos', str(positives_numsamples-10)])
+    args.extend(['-numPos', str(int(positives_numsamples*settings.classifer_training['positive_sample_ratio']))])
     args.extend(['-numNeg', str(negatives_numsamples)])
 
     print args
     # Call script to create train classifier
-    logfile = open(os.path.join(current_iter_dir, 'log_training.txt'), 'w+')
-    call(args=args, executable=os.path.join(settings.general['opencv'], 'opencv_traincascade.exe'), stdout=logfile)
-    logfile.close()
+    # logfile = open(os.path.join(current_iter_dir, 'log_training.txt'), 'w+')
+    call(args=args, executable=os.path.join(settings.general['opencv'], 'opencv_traincascade.exe'))
+    # logfile.close()
 
     return 1

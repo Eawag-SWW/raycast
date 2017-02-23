@@ -23,6 +23,6 @@ Writes:
 """
 
 
-def cluster_2d(structure, debug):
+def cluster_2d(config, debug):
     return 0
 

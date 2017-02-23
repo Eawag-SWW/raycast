@@ -35,22 +35,23 @@ import csv
 import default_settings as settings
 
 
-def cast_rays_3d(structure, debug):
-
+def cast_rays_3d(config, debug):
     # Where to find the 2D clusters
-    cluster_folder = os.path.join(settings.general['working_directory'], structure[3])
+    cluster_folder = os.path.join(config['iteration_directory'],
+                                  settings.general['iterations_structure'][0])
 
     # Where to store 3D points in memory
     # points_3d = np.empty([1, 5])
 
     # Where to save 3D points
-    output_file = os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv')
+    output_file = os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][1], '3dpoints.csv')
 
     # Start saving data
     with open(output_file, 'wb') as csv_file:
 
         point_writer = csv.writer(csv_file, delimiter=' ',
-                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                                  quotechar='"', quoting=csv.QUOTE_MINIMAL)
         point_writer.writerow(['x', 'y', 'z', 'score', 'id', 'image', 'img_x', 'img_y'])
 
         # Get camera calibration information
@@ -85,10 +86,12 @@ def cast_rays_3d(structure, debug):
             image_index += 1
 
             # read clusters
-            cluster_list = np.loadtxt(os.path.join(cluster_folder, cluster_list_file), skiprows=1, delimiter=';', ndmin=2)
+            cluster_list = np.loadtxt(os.path.join(cluster_folder, cluster_list_file), skiprows=1, delimiter=';',
+                                      ndmin=2)
 
             # fetch parameters for image
-            this_cam_params = filter(lambda c: c['camera_name'].split('.')[0] == cluster_list_file.split('.')[0], camera_params)[0]
+            this_cam_params = \
+            filter(lambda c: c['camera_name'].split('.')[0] == cluster_list_file.split('.')[0], camera_params)[0]
 
             # compute camera transforms
             KRt = np.dot(np.dot(this_cam_params['K'], this_cam_params['R']), this_cam_params['t'])
@@ -104,8 +107,8 @@ def cast_rays_3d(structure, debug):
 
                 # Step 1: project to 3D space
                 X2d = np.array([
-                    [cluster[0]*zval/float(settings.inputs['image_pixel_x'])],
-                    [cluster[1]*zval/float(settings.inputs['image_pixel_y'])],
+                    [cluster[0] * zval / float(settings.inputs['image_pixel_x'])],
+                    [cluster[1] * zval / float(settings.inputs['image_pixel_y'])],
                     [zval]])
                 X3d = np.dot(KRinv, (X2d + KRt))
 
@@ -126,11 +129,10 @@ def cast_rays_3d(structure, debug):
                         cluster[2],  # the score of the cluster
                         int(cluster[3]),  # the id of the cluster
                         cluster_list_file.split('.')[0],  # the image in which the cluster was detected
-                        int(X2d[0][0]/zval),  # image coordinates
-                        int(X2d[1][0]/zval)])
+                        int(X2d[0][0] / zval),  # image coordinates
+                        int(X2d[1][0] / zval)])
                     # points_3d = np.append(points_3d, new_point_3d, axis=0)
                     # point_writer.writerow(new_point_3d)
-
 
     return 0
 
@@ -147,7 +149,5 @@ def loadSTL(filenameSTL):
     if polydata.GetNumberOfPoints() == 0:
         raise ValueError(
             "No point data could be loaded from '" + filenameSTL)
-        return None
 
     return polydata
-

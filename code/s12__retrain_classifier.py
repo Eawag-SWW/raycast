@@ -15,18 +15,18 @@ import default_settings as settings
 import os
 
 
-def retrain_classifier(structure, debug):
+def retrain_classifier(config, debug):
     # identify latest training data
-    iteration_dirs = os.listdir(os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']))
-    current_iter_dir = os.path.join(
-        os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']),
-        sorted(iteration_dirs, reverse=True)[0])  # get latest iteration
+    new_classifier_dir = os.path.join(config['iteration_directory'],
+                                      settings.general['iterations_structure'][5])
+    training_image_dir = os.path.join(config['iteration_directory'],
+                                      settings.general['iterations_structure'][4])
 
-    positives_dat_path = os.path.join(current_iter_dir, 'positives', 'info.dat')
-    negatives_dat_path = os.path.join(current_iter_dir, 'negatives', 'info.dat')
-    positives_xml_path = os.path.join(current_iter_dir, 'positives', 'positives.xml')
-    positives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'positives', 'img')))
-    negatives_numsamples = len(os.listdir(os.path.join(current_iter_dir, 'negatives', 'img')))
+    positives_dat_path = os.path.join(training_image_dir, 'positives', 'info.dat')
+    negatives_dat_path = os.path.join(training_image_dir, 'negatives', 'info.dat')
+    positives_xml_path = os.path.join(training_image_dir, 'positives', 'positives.xml')
+    positives_numsamples = len(os.listdir(os.path.join(training_image_dir, 'positives', 'img')))
+    negatives_numsamples = len(os.listdir(os.path.join(training_image_dir, 'negatives', 'img')))
 
     # create positive examples xml
     path_vec = os.path.join(settings.general['opencv'], 'opencv_createsamples.exe')
@@ -39,7 +39,7 @@ def retrain_classifier(structure, debug):
          executable=path_vec)
 
     # create folder to store classifier products
-    training_dir = os.path.join(current_iter_dir, 'haar_training/')
+    training_dir = os.path.join(new_classifier_dir, 'haar_training/')
     if not os.path.exists(training_dir):
         os.makedirs(training_dir)
     # convert classifier settings into list
@@ -48,9 +48,9 @@ def retrain_classifier(structure, debug):
     args.extend(['-vec', positives_xml_path])
     args.extend(['-bg', negatives_dat_path])
     for key, value in settings.haarClassiferArgs.iteritems():
-        args.append('-'+key)
+        args.append('-' + key)
         args.append(str(value))
-    args.extend(['-numPos', str(int(positives_numsamples*settings.classifer_training['positive_sample_ratio']))])
+    args.extend(['-numPos', str(int(positives_numsamples * settings.classifer_training['positive_sample_ratio']))])
     args.extend(['-numNeg', str(negatives_numsamples)])
 
     print args
@@ -59,4 +59,4 @@ def retrain_classifier(structure, debug):
     call(args=args, executable=os.path.join(settings.general['opencv'], 'opencv_traincascade.exe'))
     # logfile.close()
 
-    return 1
+    return 0

@@ -21,19 +21,11 @@ from scipy import misc
 import sys
 
 
-def refresh_training_images(structure, debug):
-    # Create folder structure for the current iteration
-    iteration_dir = os.path.join(settings.general['working_directory'],
-                                 settings.general['iterations_subdir'], datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"))
-    # # identify latest training data
-    # iteration_dirs = os.listdir(
-    #     os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']))
-    # iteration_dir = os.path.join(
-    #     os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']),
-    #     sorted(iteration_dirs, reverse=True)[0])  # get latest iteration
+def refresh_training_images(config, debug):
+    training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4])
 
     for directory in ['positives/img', 'negatives/img']:
-        dir = os.path.join(iteration_dir, directory)
+        dir = os.path.join(training_image_dir, directory)
         if not os.path.exists(dir):
             os.makedirs(dir)
             if debug: print "directory created: {directory}".format(directory=dir)
@@ -42,15 +34,18 @@ def refresh_training_images(structure, debug):
     # PROCESS POINTS
     # load points
     candidates = pd.read_csv(
-        os.path.join(settings.general['working_directory'], structure[9], '3dpoints_evaluated.csv'),
+        os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+                     '3dpoints_evaluated.csv'),
         sep=' ')
 
     # for each image, do clipping
     for image_name in list(candidates.image.unique()):
         sys.stdout.write('.')
         # Load image
-        image = ndimage.imread(os.path.join(settings.general['working_directory'], structure[2], image_name + '.tif'),
-                               flatten=True)
+        image = ndimage.imread(
+            os.path.join(settings.general['working_directory'], settings.general['preparations_subdir'],
+                         settings.general['preparations_structure'][2], image_name + '.tif'),
+            flatten=True)
         # Process candidates from that image
         filtered_cd = candidates[candidates['image'] == image_name]
         for index, cd in filtered_cd.iterrows():
@@ -68,22 +63,22 @@ def refresh_training_images(structure, debug):
                 subdir = 'negatives/img'
             # Save image and write filename
             filename = '{}_({}-{}).jpg'.format(image_name, cd['img_x'], cd['img_y'])
-            misc.imsave(os.path.join(iteration_dir, subdir, filename), crop1)
+            misc.imsave(os.path.join(training_image_dir, subdir, filename), crop1)
 
     print 'done clipping. Writing dat files'
 
     # save list of file names
     for directory in ['positives', 'negatives']:
         img_list = os.listdir(os.path.join(
-            iteration_dir, directory, 'img'))
-        list_file = open(os.path.join(iteration_dir, directory, "info.dat"), "w+")
+            training_image_dir, directory, 'img'))
+        list_file = open(os.path.join(training_image_dir, directory, "info.dat"), "w+")
         for path in img_list:
             # positives and negatives require a different format
             if directory == 'positives':
                 list_file.writelines(os.path.join('img', "{} 1 0 0 {} {}\n".format(
                     path, settings.training_images['width'], settings.training_images['height'])))
             elif directory == 'negatives':
-                list_file.writelines(os.path.join(iteration_dir, directory, 'img', "{}\n".format(path)))
+                list_file.writelines(os.path.join(training_image_dir, directory, 'img', "{}\n".format(path)))
         list_file.close()
 
     return 0

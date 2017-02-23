@@ -25,8 +25,7 @@ import os
 import default_settings as settings
 
 
-def project_boundary_3d(structure, debug):
-
+def project_boundary_3d(config, debug):
     # read data from file
     boundary2D = helpers.load_shape(settings.inputs['boundary_file'], debug=debug)
     dem_dataset = gdal.Open(settings.inputs['demfile'])
@@ -44,7 +43,9 @@ def project_boundary_3d(structure, debug):
 
     # Create new file
     # Create new, even if the last already exists, because otherwise there are problems
-    filename = os.path.join(settings.general['working_directory'], structure[0], 'boundary3D.json')
+    filename = os.path.join(settings.general['working_directory'],
+                            settings.general['preparations_subdir'],
+                            settings.general['preparations_structure'][0], 'boundary3D.json')
     if os.path.exists(filename):
         driver.DeleteDataSource(filename)
     dataSource = driver.CreateDataSource(filename)

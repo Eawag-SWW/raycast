@@ -18,7 +18,7 @@ from shapely.ops import cascaded_union
 import default_settings as settings
 
 
-def evaluate_candidates(structure, debug):
+def evaluate_candidates(config, debug):
     if not settings.evaluation['do_evaluation']:
         return 0
 
@@ -45,13 +45,15 @@ def evaluate_candidates(structure, debug):
 
     # 2. TEST WHETHER CANDIDATES FALL WITHIN BUFFERS OF GROUND TRUTH
     # a. point candidates
-    evaluate_file(os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv'),
-                  buffers,
-                  os.path.join(settings.general['working_directory'], structure[9], '3dpoints_evaluated.csv'))
+    evaluate_file(os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][1], '3dpoints.csv'), buffers,
+                  os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][3], '3dpoints_evaluated.csv'))
     # b. clusters
-    evaluate_file(os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv'),
-                  buffers,
-                  os.path.join(settings.general['working_directory'], structure[9], '3dclusters_evaluated.csv'))
+    evaluate_file(os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][2], '3dclusters.csv'), buffers,
+                  os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][3], '3dclusters_evaluated.csv'))
 
     return 0
 

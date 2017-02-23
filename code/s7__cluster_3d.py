@@ -32,14 +32,16 @@ import default_settings as settings
 buffer_dist = 0.2
 
 
-def cluster_3d(structure, debug):
-
+def cluster_3d(config, debug):
     # Where to get points from
-    points_file = os.path.join(settings.general['working_directory'], structure[5], '3dpoints.csv')
+    points_file = os.path.join(config['iteration_directory'],
+                               settings.general['iterations_structure'][1], '3dpoints.csv')
 
     # Where to save clusters
-    save_to_directory = os.path.join(settings.general['working_directory'], structure[6])
-    clusters_file = os.path.join(settings.general['working_directory'], structure[6], '3dclusters.csv')
+    save_to_directory = os.path.join(config['iteration_directory'],
+                                     settings.general['iterations_structure'][2])
+    clusters_file = os.path.join(config['iteration_directory'],
+                                 settings.general['iterations_structure'][2], '3dclusters.csv')
 
     # points = np.loadtxt(points_file)
 
@@ -92,7 +94,8 @@ def cluster_3d(structure, debug):
             # Add points to clusters
             for point in points:
                 if area.contains(point['geom']):
-                    cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (cluster['count'] + 1)
+                    cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (
+                    cluster['count'] + 1)
                     cluster['max_score'] = max(cluster['max_score'], float(point['score']))
                     cluster['count'] += 1
                     cluster['points'].append(point)
@@ -107,7 +110,7 @@ def cluster_3d(structure, debug):
                 cluster['area'],
                 cluster['avg_score'],
                 cluster['max_score'],
-                cluster['count']/cluster['area']])
+                cluster['count'] / cluster['area']])
 
     return 0
 
@@ -168,4 +171,3 @@ def cluster_3d(structure, debug):
     # np.savetxt(os.path.join(save_to_directory, 'weight_matrix.csv'), weight_graph)
     # np.savetxt(os.path.join(save_to_directory, '3dclusters_meanshift.csv'), centroids_ms)
     # np.savetxt(os.path.join(save_to_directory, '3dclusters_dbscan.csv'), centroids_dbscan)
-

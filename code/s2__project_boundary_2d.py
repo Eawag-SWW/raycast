@@ -28,7 +28,6 @@ Tools:
 
 """
 
-
 import ogr
 import helpers
 import os
@@ -36,7 +35,7 @@ import numpy as np
 import default_settings as settings
 
 
-def project_boundary_2d(structure, debug):
+def project_boundary_2d(config, debug):
     """Projects 3D boundary into coordinate systems of 2D images."""
 
     # Read image calibration parameters
@@ -46,10 +45,12 @@ def project_boundary_2d(structure, debug):
     for camera in params:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name']
-        output_file = os.path.join(settings.general['working_directory'], structure[1],
+        output_file = os.path.join(settings.general['working_directory'],
+                                   settings.general['preparations_subdir'],
+                                   settings.general['preparations_structure'][1],
                                    camera_name + '_boundary2D.json')
         # project and save
-        project2d(output_file, camera, structure, debug=debug)
+        project2d(output_file, camera, debug=debug)
 
         pass
 
@@ -58,12 +59,11 @@ def project_boundary_2d(structure, debug):
     pass
 
 
-def project2d(output_file, camera, structure, debug=False):
+def project2d(output_file, camera, debug=False):
     if debug:
         print 'working on ', output_file
 
     print_calc = debug
-
 
     # calculate fixed offset for projection
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
@@ -79,7 +79,8 @@ def project2d(output_file, camera, structure, debug=False):
     # only the projection for the first image would work - the other were returned empty.
     boundary3D = helpers.load_shape(os.path.join(
         settings.general['working_directory'],
-        structure[0],
+        settings.general['preparations_subdir'],
+        settings.general['preparations_structure'][0],
         'boundary3D.json'), driver='GeoJSON', debug=debug)
 
     # Register driver
@@ -130,8 +131,8 @@ def project2d(output_file, camera, structure, debug=False):
                         vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
                         # ===================================================
 
-                        u = float(settings.inputs['image_pixel_x'])*vec[0, 0] / vec[2, 0]
-                        v = float(settings.inputs['image_pixel_y'])*vec[1, 0] / vec[2, 0]
+                        u = float(settings.inputs['image_pixel_x']) * vec[0, 0] / vec[2, 0]
+                        v = float(settings.inputs['image_pixel_y']) * vec[1, 0] / vec[2, 0]
 
                         # limit point coordinates to keep it from becoming outrageous
                         u = min(max(u, -.5), .5)

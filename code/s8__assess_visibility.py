@@ -24,5 +24,5 @@ Writes:
 """
 
 
-def assess_visibility(structure, debug):
+def assess_visibility(config, debug):
     return 0

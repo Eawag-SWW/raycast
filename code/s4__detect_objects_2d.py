@@ -31,14 +31,16 @@ import numpy as np
 from helpers import readGeoTiff
 import default_settings as settings
 
-# Main module function
-def detect_objects_2d(structure, debug):
 
+def detect_objects_2d(config, debug):
     # clipped images from previous task are stored here
-    image_folder = os.path.join(settings.general['working_directory'], structure[2])
+    image_folder = os.path.join(settings.general['working_directory'],
+                                settings.general['preparations_subdir'],
+                                settings.general['preparations_structure'][2])
 
     # detected locations should be stored here
-    output_folder = os.path.join(settings.general['working_directory'], structure[3])
+    output_folder = os.path.join(config['iteration_directory'],
+                                 settings.general['iterations_structure'][0])
 
     # classifier data found here
     classifier_xml = settings.inputs['classifier_default']
@@ -57,7 +59,6 @@ def detect_objects_2d(structure, debug):
 
 # Function for detecting objects
 def cascade_detect(image_name, image_file, output_folder, classifier_xml):
-
     # Load classifier from data
     object_detector = cv2.CascadeClassifier(classifier_xml)
     # Check that it was successful

@@ -2,6 +2,7 @@
 Functions of general purpose
 """
 
+import default_settings as settings
 
 def load_shape(filename, driver='ESRI Shapefile', debug=True):
     """
@@ -30,19 +31,22 @@ def load_shape(filename, driver='ESRI Shapefile', debug=True):
     return datasource
 
 
-def write_to_log(settings, line):
+def write_step_to_log(config, line):
     """
     Writes a string to the log file
-    :param settings: contains path to project root
+    :param config: contains info about where to write the log
     :param line: string to write to file
     :return: none
     """
     import os
     import datetime
-
-    with open(os.path.join(settings.general['working_directory'], 'log.txt'),
+    if config['stage'] == 'preparations':
+        logfile = os.path.join(settings.general['working_directory'], settings.general[config['stage']+'_subdir'], 'log.txt')
+    else:
+        logfile = os.path.join( config['iteration_directory'], 'log.txt')
+    with open(logfile,
               'a+') as log:  # a+ means add to file
-        log.write('\n' + str(datetime.datetime.now()))
+        # log.write('\n' + str(datetime.datetime.now()))
         log.write('\n' + line)
     pass
 

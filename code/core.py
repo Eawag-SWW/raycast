@@ -48,7 +48,7 @@ def main():
 
 
 def execute_steps(config, structure):
-    step = config['iteration_position']
+    step = config['step_position']
     # execute steps
     while step != 'iteration done.':
         helpers.write_step_to_log(config=config, line=step)
@@ -113,7 +113,7 @@ def initialize_prep():
     # determine whether to start directly with the iteration or start with preparatory work
     do_preparation = not (preparations_position == 'preparations done.')
     return {"do_preparation": do_preparation,
-            "position": preparations_position,
+            "step_position": preparations_position,
             "stage": "preparations"}
 
 
@@ -134,19 +134,19 @@ def initialize_iterations():
             lines = log.readlines()
             # try to read the last line.
             if len(lines) > 0:
-                config['iteration_position'] = lines[-1]
+                config['step_position'] = lines[-1]
             else:
                 # If the file is empty, then set a default starting position
-                config['iteration_position'] = settings.general['iterations_structure'][0]
+                config['step_position'] = settings.general['iterations_structure'][0]
 
         # if the last iteration was finished, start a new one if we haven't reached the limit
-        if (config['iteration_position'] == 'iteration done.') & (config['generation'] < settings.general['max_generations']):
+        if (config['step_position'] == 'iteration done.') & (config['generation'] < settings.general['max_generations']):
             # start a new iteration
             config = create_iteration_dir(is_first=False, previous_iteration_dir=last_iteration_directory)
             # reset the position
-            config['iteration_position'] = settings.general['iterations_structure'][0]
+            config['step_position'] = settings.general['iterations_structure'][0]
 
-        elif config['iteration_position'] != 'iteration done.':
+        elif config['step_position'] != 'iteration done.':
             print 'continuing iteration'
             # continue last iteration
 

@@ -22,7 +22,7 @@ import helpers
 import numpy as np
 import os
 import default_settings as s
-from s11__refresh_training_images import *
+from s12__extract_candidate_images import *
 
 
 def extract_initial_samples(config, debug):
@@ -59,8 +59,9 @@ def extract_initial_samples(config, debug):
         result_writer.writerows(positive2D + negative2D)
 
     # Clip samples
-    refresh_training_images(config, debug, image_sample_dir, output_file_points)
+    extract_candidate_images(config, debug, image_sample_dir, output_file_points)
 
+    # Todo: manually verify that the samples are correct.
     return 0
 
 

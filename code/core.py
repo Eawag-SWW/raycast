@@ -15,10 +15,10 @@ from s11__fit_binary_model import *
 from s10__evaluate_candidates import *
 from s12__extract_candidate_images import *
 import default_settings as settings
+import csv
 
 # Global variables
 debug = True
-
 
 
 def main():
@@ -35,7 +35,7 @@ def main():
     # initialize preparatory tasks
     prep_config = initialize_prep()
     # do prep tasks
-    if prep_config['do_preparation'] == True:
+    if prep_config['do_preparation']:
         execute_steps(config=prep_config, structure=settings.general['preparations_structure'])
         helpers.write_step_to_log(prep_config, 'preparations done.')
 
@@ -48,14 +48,16 @@ def main():
 
 
 def execute_steps(config, structure):
-    step = config['position']
+    step = config['iteration_position']
     # execute steps
     while step != 'iteration done.':
         helpers.write_step_to_log(config=config, line=step)
         print '### ' + step
         r = globals()[step.split('__')[1]](config, debug)
         if r != 0:
-            break
+            print 'Error code raised'
+            quit()
+
         step = get_next_step(step, structure)
         if not step:
             step = 'iteration done.'
@@ -116,59 +118,45 @@ def initialize_prep():
 
 
 def initialize_iterations():
-    iteration_directory = ''
-    iteration_position = ''
     # if we are supposed to start a new iteration,
     if settings.general['start_new_iteration']:
         # create new iteration directory
-        (iteration_directory, generation, classifier_path, binary_model_path) = create_iteration_dir()
+        config = create_iteration_dir()
 
     else:  # otherwise, find the last iteration process
         last_iteration_directory = latest_iteration_dir()
         # check iteration config
-        with open(os.path.join(last_iteration_directory, 'config.txt'), 'a+') as config:
-            lines = config.readlines()
-            # get the generation number
-            generation = int(lines[0])
-            # get the classifier and binary model info
-            classifier_path = lines[1].rstrip('\n')
-            binary_model_path = lines[2].rstrip('\n')
+        with open(os.path.join(last_iteration_directory, 'config.txt'), 'r') as f:
+            config = next(csv.DictReader(f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL))
 
         # check position in iteration from log file
         with open(os.path.join(last_iteration_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
             lines = log.readlines()
             # try to read the last line.
             if len(lines) > 0:
-                iteration_position = lines[-1]
+                config['iteration_position'] = lines[-1]
             else:
                 # If the file is empty, then set a default starting position
-                iteration_position = settings.general['iterations_structure'][0]
+                config['iteration_position'] = settings.general['iterations_structure'][0]
 
         # if the last iteration was finished, start a new one if we haven't reached the limit
-        if (iteration_position == 'iteration done.') & (generation < settings.general['max_generations']):
+        if (config['iteration_position'] == 'iteration done.') & (config['generation'] < settings.general['max_generations']):
             # start a new iteration
-            (iteration_directory,
-             generation,
-             classifier_path,
-             binary_model_path) = create_iteration_dir(is_first=False, previous_iteration_dir=last_iteration_directory)
+            config = create_iteration_dir(is_first=False, previous_iteration_dir=last_iteration_directory)
             # reset the position
-            iteration_position = settings.general['iterations_structure'][0]
+            config['iteration_position'] = settings.general['iterations_structure'][0]
 
-        elif iteration_position != 'iteration done.':
+        elif config['iteration_position'] != 'iteration done.':
+            print 'continuing iteration'
             # continue last iteration
-            iteration_directory = last_iteration_directory
+
 
         else:
             # stop the process. This baby is done!
             stop_iteration()
 
     # update settings
-    return {"iteration_directory": iteration_directory,
-            "position": iteration_position,
-            "generation": generation,
-            "classifier_path": classifier_path,
-            "binary_model_path": binary_model_path,
-            "stage": "iterations"}
+    return config
 
 
 def latest_iteration_dir():
@@ -180,7 +168,7 @@ def latest_iteration_dir():
             os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']),
             sorted(iteration_dirs, reverse=True)[0])  # get latest iteration
     else:
-        return create_iteration_dir()[0]
+        return create_iteration_dir()['iteration_directory']
 
 
 def create_iteration_dir(is_first=True, previous_iteration_dir=''):
@@ -192,25 +180,42 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
     check_directory_structure(iteration_dir, settings.general['iterations_structure'])
     if not is_first:
         with open(os.path.join(previous_iteration_dir, 'config.txt'),
-                  'a+') as config:  # a+ means append new text to file
-            lines = config.readlines()
+                  'a+') as f:  # a+ means append new text to file
+            rows = csv.DictReader(f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             # get the generation number and increment
-            generation = int(lines[0]) + 1
-        classifier_path = os.path.join(previous_iteration_dir, settings.general['iterations_structure'][5],
-                                       'cascade.xml')
-        binary_model_path = os.path.join(previous_iteration_dir, settings.general['iterations_structure'][6],
-                                         'binary_model.py')
+            generation = next(rows)['generation']
+
+        config = {
+            'generation': generation,
+            'stage': 'iterations',
+            'neg_samples_initial_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure'][0],
+                                                    'negatives', 'img'),
+            'neg_samples_new_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure'][7],
+                                                'negatives', 'img'),
+            'iteration_directory': iteration_dir
+        }
+
     elif is_first:
-        generation = 1
-        classifier_path = settings.inputs['classifier_default']
-        binary_model_path = settings.inputs['binary_model_default']
+        config = {
+            'generation': 1,
+            'stage': 'iterations',
+            'neg_samples_initial_dir': os.path.join(settings.general['working_directory'],
+                                                    settings.general['preparations_subdir'],
+                                                    settings.general['preparations_structure'][3],
+                                                    'images', 'negatives', 'img'),
+            'neg_samples_new_dir': '',
+            'iteration_directory': iteration_dir
+        }
 
     # write iteration config settings to file
-    with open(os.path.join(iteration_dir, 'config.txt'), 'a+') as config:
-        config.write(str(generation) + '\n')
-        config.write(classifier_path + '\n')
-        config.write(binary_model_path + '\n')
-    return iteration_dir, generation, classifier_path, binary_model_path
+    with open(os.path.join(iteration_dir, 'config.txt'), 'a+') as f:
+        result_writer = csv.DictWriter(f, delimiter=';', fieldnames=config.keys(),
+                                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        result_writer.writeheader()
+        result_writer.writerow(config)
+
+    return config
 
 
 def stop_iteration():

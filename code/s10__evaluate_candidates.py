@@ -32,18 +32,23 @@ def evaluate_candidates(config, debug):
     stats_file_points = os.path.join(settings.general['working_directory'], 'stats_points.txt')
     stats_file_clusters = os.path.join(settings.general['working_directory'], 'stats_clusters.txt')
     # a. point candidates
-    points_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][1], '3dpoints.csv')
-    points_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+    points_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3], '3dpoints.csv')
+    points_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
                               '3dpoints_evaluated.csv')
-    points_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+    points_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
                                     '3dpoints_truth_evaluated.csv')
+    # Do evaluation
     evaluate_file(points_in, ground_truth_file, points_out, points_out_truth, stats_file_points, config['generation'])
+
+    # =====================================
     # b. clusters
-    clus_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][2], '3dclusters.csv')
-    clus_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+    clus_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4], '3dclusters.csv')
+    clus_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
                             '3dclusters_evaluated.csv')
-    clus_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+    clus_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
                                   '3dclusters_truth_evaluated.csv')
+
+    # Do evaluation
     evaluate_file(clus_in, ground_truth_file, clus_out, clus_out_truth, stats_file_clusters, config['generation'])
 
     return 0

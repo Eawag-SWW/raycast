@@ -18,15 +18,18 @@ import os
 def retrain_classifier(config, debug):
     # identify latest training data
     new_classifier_dir = os.path.join(config['iteration_directory'],
-                                      settings.general['iterations_structure'][5])
-    training_image_dir = os.path.join(config['iteration_directory'],
-                                      settings.general['iterations_structure'][4])
+                                      settings.general['iterations_structure'][1])
+    training_image_dir_pos = os.path.join(settings.general['working_directory'],
+                                          settings.general['preparations_subdir'],
+                                          settings.general['preparations_structure'][3], 'images', 'positives')
+    training_image_dir_neg = os.path.join(config['iteration_directory'],
+                                          settings.general['iterations_structure'][0], 'negatives')
 
-    positives_dat_path = os.path.join(training_image_dir, 'positives', 'info.dat')
-    negatives_dat_path = os.path.join(training_image_dir, 'negatives', 'info.dat')
-    positives_xml_path = os.path.join(training_image_dir, 'positives', 'positives.xml')
-    positives_numsamples = len(os.listdir(os.path.join(training_image_dir, 'positives', 'img')))
-    negatives_numsamples = len(os.listdir(os.path.join(training_image_dir, 'negatives', 'img')))
+    positives_dat_path = os.path.join(training_image_dir_pos, 'info.dat')
+    negatives_dat_path = os.path.join(training_image_dir_neg, 'info.dat')
+    positives_xml_path = os.path.join(training_image_dir_pos, 'positives.xml')
+    positives_numsamples = len(os.listdir(os.path.join(training_image_dir_pos, 'img')))
+    negatives_numsamples = len(os.listdir(os.path.join(training_image_dir_neg, 'img')))
 
     # create positive examples xml
     path_vec = os.path.join(settings.general['opencv'], 'opencv_createsamples.exe')

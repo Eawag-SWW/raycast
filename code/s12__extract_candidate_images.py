@@ -23,11 +23,14 @@ from Tkinter import *
 from tkMessageBox import *
 
 
-def refresh_training_images(config, debug, training_image_dir='', points_file=''):
+def extract_candidate_images(config, debug, training_image_dir='', points_file=''):
+    # Output of candidate images
     if training_image_dir == '':
-        training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4])
+        training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][7])
+
+    # Input of points
     if points_file == '':
-        points_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+        points_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
                                    '3dpoints_evaluated.csv')
 
     for directory in ['positives/img', 'negatives/img']:
@@ -74,20 +77,22 @@ def refresh_training_images(config, debug, training_image_dir='', points_file=''
             misc.imsave(os.path.join(training_image_dir, subdir, filename), crop1)
 
     print 'done clipping. Writing dat files'
-    showwarning(title='Verify samples', message='Please verify that the negative sample images in %s are correct.' %
-                                                os.path.join(training_image_dir, 'negatives', 'img'))
+    showwarning(title='Verify samples', message='Please verify that the sample images in %s are correct.' %
+                                                training_image_dir)
 
     # save list of file names
     for directory in ['positives', 'negatives']:
         img_list = os.listdir(os.path.join(
             training_image_dir, directory, 'img'))
         list_file = open(os.path.join(training_image_dir, directory, "info.dat"), "w+")
-        for path in img_list:
-            # positives and negatives require a different format
-            if directory == 'positives':
+
+        # positives and negatives require a different format
+        if directory == 'positives':
+            for path in img_list:
                 list_file.writelines(os.path.join('img', "{} 1 0 0 {} {}\n".format(
                     path, settings.training_images['width'], settings.training_images['height'])))
-            elif directory == 'negatives':
+        elif directory == 'negatives':
+            for path in img_list:
                 list_file.writelines(os.path.join(training_image_dir, directory, 'img', "{}\n".format(path)))
         list_file.close()
 

@@ -50,8 +50,8 @@ evaluation = {
 training_images = {
     'width': 24,
     'height': 24,
-    "positives_file": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/ground_truth/positives/positives.csv",
-    "negatives_file": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/ground_truth/negatives/negatives.csv",
+    "positives_file": "../demo_data/training/positives.csv",
+    "negatives_file": "../demo_data/training/negatives.csv",
     "csv_delimiter": ","
 }
 haarClassiferArgs = {

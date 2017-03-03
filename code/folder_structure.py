@@ -1,0 +1,13 @@
+structure = [['init', 's1__project_boundary_3d'],
+             ['init', 's2__project_boundary_2d'],
+             ['init', 's3__clip_images_2d'],
+             ['iter', 's4__detect_objects_2d'],
+             ['iter', 's5__cluster_2d'],
+             ['iter', 's6__cast_rays_3d'],
+             ['iter', 's7__cluster_3d'],
+             ['iter', 's8__assess_visibility'],
+             ['iter', 's9__assess_reliability'],
+             ['iter', 's10__evaluate_candidates'],
+             ['iter', 's11__refresh_training_images'],
+             ['iter', 's12__retrain_classifier'],
+             ['iter', 's13__retrain_binary_model']]

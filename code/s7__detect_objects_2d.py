@@ -33,17 +33,19 @@ import default_settings as settings
 
 
 def detect_objects_2d(config, debug):
-    # clipped images from previous task are stored here
+    # clipped images from preparations task are stored here
     image_folder = os.path.join(settings.general['working_directory'],
                                 settings.general['preparations_subdir'],
                                 settings.general['preparations_structure'][2])
 
     # detected locations should be stored here
     output_folder = os.path.join(config['iteration_directory'],
-                                 settings.general['iterations_structure'][0])
+                                 settings.general['iterations_structure'][2])
 
     # classifier data found here
-    classifier_xml = config['classifier_path']
+    classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][1],
+                                            'cascade.xml')
+
 
     # loop through each image
     for image_file in os.listdir(image_folder):
@@ -64,6 +66,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
     # Check that it was successful
     if object_detector.empty():
         print 'classifier not loaded - stopping script'
+        quit()
 
     # read image
     image, origin, cell_size, dimensions = readGeoTiff(image_file)

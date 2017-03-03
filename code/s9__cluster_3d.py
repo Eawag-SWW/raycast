@@ -35,13 +35,13 @@ buffer_dist = 0.2
 def cluster_3d(config, debug):
     # Where to get points from
     points_file = os.path.join(config['iteration_directory'],
-                               settings.general['iterations_structure'][1], '3dpoints.csv')
+                               settings.general['iterations_structure'][3], '3dpoints.csv')
 
     # Where to save clusters
     save_to_directory = os.path.join(config['iteration_directory'],
-                                     settings.general['iterations_structure'][2])
+                                     settings.general['iterations_structure'][4])
     clusters_file = os.path.join(config['iteration_directory'],
-                                 settings.general['iterations_structure'][2], '3dclusters.csv')
+                                 settings.general['iterations_structure'][4], '3dclusters.csv')
 
     # points = np.loadtxt(points_file)
 

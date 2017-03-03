@@ -46,8 +46,8 @@ def clip_images_2d(config, debug):
         if debug:
             print 'clipping file ' + str(file_index) + ' of ' + str(file_count)
         file_index += 1
-        image_file = os.path.join(settings.inputs['undistorted_image_folder'], boundary_file.split('.')[0] + '.tif')
-        image_file_clipped = os.path.join(output_folder, boundary_file.split('.')[0] + '.tif')
+        image_file = os.path.join(settings.inputs['undistorted_image_folder'], boundary_file.split('__')[0] + '.tif')
+        image_file_clipped = os.path.join(output_folder, boundary_file.split('__')[0] + '.tif')
         if os.path.isfile(image_file):
             call(
                 ['gdalwarp.exe',

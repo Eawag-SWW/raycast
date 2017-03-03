@@ -44,13 +44,15 @@ def project_boundary_2d(config, debug):
     # Loop through images, project, clip, save
     for camera in params:
         # pMatrix = camera['camera_matrix']
-        camera_name = camera['camera_name']
-        output_file = os.path.join(settings.general['working_directory'],
-                                   settings.general['preparations_subdir'],
-                                   settings.general['preparations_structure'][1],
-                                   camera_name + '_boundary2D.json')
-        # project and save
-        project2d(output_file, camera, debug=debug)
+        camera_name = camera['camera_name'].split('.')[0]
+        # check if the image actually exists in the project
+        if os.path.isfile(os.path.join(settings.inputs['undistorted_image_folder'], camera_name+'.tif')):
+            output_file = os.path.join(settings.general['working_directory'],
+                                       settings.general['preparations_subdir'],
+                                       settings.general['preparations_structure'][1],
+                                       camera_name + '__boundary2D.json')
+            # project and save
+            project2d(output_file, camera, debug=debug)
 
         pass
 

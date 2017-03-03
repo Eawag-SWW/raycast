@@ -60,8 +60,5 @@ def clip_images_2d(config, debug):
                  image_file_clipped],
                 executable=settings.general['gdalwarp'])
 
-            # os.system(settings.general['gdalwarp'] + ' -q' + ' -cutline ' + os.path.join(boundary_folder, boundary_file) +
-            #       ' -tr 1e-05 1e-05' + ' -of GTIFF' + ' ' + image_file + ' ' + image_file_clipped)
-
     return 0
     pass

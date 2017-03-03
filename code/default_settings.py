@@ -8,10 +8,11 @@ general = {
     "gdalwarp": "C:/Program Files/QGIS Essen/bin/gdalwarp.exe",
     "opencv": "C:/opt/opencv/build/x64/vc14/bin",
     "start_new_iteration": False,
-    "preparations_structure": ['s1__project_boundary_3d', 's2__project_boundary_2d', 's3__clip_images_2d'],
-    "iterations_structure": ['s4__detect_objects_2d', 's6__cast_rays_3d', 's7__cluster_3d',
-                             's10__evaluate_candidates', 's11__refresh_training_images', 's12__retrain_classifier',
-                             's13__retrain_binary_model'],
+    "preparations_structure": ['s1__project_boundary_3d', 's2__project_boundary_2d', 's3__clip_images_2d',
+                               's4__extract_initial_samples'],
+    "iterations_structure": ['s5__refresh_training_sets', 's6__retrain_classifier', 's7__detect_objects_2d',
+                             's8__cast_rays_3d', 's9__cluster_3d', 's10__evaluate_candidates', 's11__fit_binary_model',
+                             's12__extract_candidate_images'],
     "max_generations": 3
 }
 inputs = {
@@ -27,6 +28,8 @@ inputs = {
     "camera_xyz_offset": "../demo_data/image_params/l1_offset.xyz",
     "image_pixel_x": 0.00001,
     "image_pixel_y": -0.00001,
+    "image_width_px": 4608,
+    "image_height_px": 3456,
     "calibrationformat": "pix4D",
     "ground_truth": "../demo_data/validation/positives.csv",
     "ground_truth_csv_delimiter": ","
@@ -46,7 +49,10 @@ evaluation = {
 }
 training_images = {
     'width': 24,
-    'height': 24
+    'height': 24,
+    "positives_file": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/ground_truth/positives/positives.csv",
+    "negatives_file": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/data/ground_truth/negatives/negatives.csv",
+    "csv_delimiter": ","
 }
 haarClassiferArgs = {
     'numStages': 4,
@@ -62,6 +68,6 @@ haarClassiferArgs = {
     'mode': 'ALL'
 }
 classifer_training = {
-    'positive_sample_ratio': 0.85
     # Not all positive samples should be used because some will be discarded during training
+    'positive_sample_ratio': 0.85
 }

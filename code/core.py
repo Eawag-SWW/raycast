@@ -5,16 +5,15 @@
 from s1__project_boundary_3d import *
 from s2__project_boundary_2d import *
 from s3__clip_images_2d import *
-from s4__detect_objects_2d import *
-from s5__cluster_2d import *
-from s6__cast_rays_3d import *
-from s7__cluster_3d import *
-from s8__assess_visibility import *
-from s9__assess_reliability import *
+from s4__extract_initial_samples import *
+from s5__refresh_training_sets import *
+from s6__retrain_classifier import *
+from s7__detect_objects_2d import *
+from s8__cast_rays_3d import *
+from s9__cluster_3d import *
+from s11__fit_binary_model import *
 from s10__evaluate_candidates import *
-from s11__refresh_training_images import *
-from s12__retrain_classifier import *
-from s13__retrain_binary_model import *
+from s12__extract_candidate_images import *
 import default_settings as settings
 
 # Global variables
@@ -132,8 +131,8 @@ def initialize_iterations():
             # get the generation number
             generation = int(lines[0])
             # get the classifier and binary model info
-            classifier_path = lines[1]
-            binary_model_path = lines[2]
+            classifier_path = lines[1].rstrip('\n')
+            binary_model_path = lines[2].rstrip('\n')
 
         # check position in iteration from log file
         with open(os.path.join(last_iteration_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
@@ -181,7 +180,7 @@ def latest_iteration_dir():
             os.path.join(settings.general['working_directory'], settings.general['iterations_subdir']),
             sorted(iteration_dirs, reverse=True)[0])  # get latest iteration
     else:
-        return create_iteration_dir()
+        return create_iteration_dir()[0]
 
 
 def create_iteration_dir(is_first=True, previous_iteration_dir=''):
@@ -198,7 +197,7 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
             # get the generation number and increment
             generation = int(lines[0]) + 1
         classifier_path = os.path.join(previous_iteration_dir, settings.general['iterations_structure'][5],
-                                       'classifier.xml')
+                                       'cascade.xml')
         binary_model_path = os.path.join(previous_iteration_dir, settings.general['iterations_structure'][6],
                                          'binary_model.py')
     elif is_first:
@@ -211,7 +210,7 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
         config.write(str(generation) + '\n')
         config.write(classifier_path + '\n')
         config.write(binary_model_path + '\n')
-    return (iteration_dir, generation, classifier_path, binary_model_path)
+    return iteration_dir, generation, classifier_path, binary_model_path
 
 
 def stop_iteration():

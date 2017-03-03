@@ -19,10 +19,16 @@ import default_settings as settings
 from scipy import ndimage
 from scipy import misc
 import sys
+from Tkinter import *
+from tkMessageBox import *
 
 
-def refresh_training_images(config, debug):
-    training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4])
+def refresh_training_images(config, debug, training_image_dir='', points_file=''):
+    if training_image_dir == '':
+        training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4])
+    if points_file == '':
+        points_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
+                                   '3dpoints_evaluated.csv')
 
     for directory in ['positives/img', 'negatives/img']:
         dir = os.path.join(training_image_dir, directory)
@@ -33,19 +39,21 @@ def refresh_training_images(config, debug):
 
     # PROCESS POINTS
     # load points
-    candidates = pd.read_csv(
-        os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3],
-                     '3dpoints_evaluated.csv'),
-        sep=' ')
+    candidates = pd.read_csv(points_file, sep=' ')
 
-    # for each image, do clipping
+    # Todo: load positives and negatives from previous generation
+
+    # for each image, extract the hard negatives from that image.
     for image_name in list(candidates.image.unique()):
         sys.stdout.write('.')
         # Load image
-        image = ndimage.imread(
-            os.path.join(settings.general['working_directory'], settings.general['preparations_subdir'],
-                         settings.general['preparations_structure'][2], image_name + '.tif'),
-            flatten=True)
+        image_file = os.path.join(settings.general['working_directory'], settings.general['preparations_subdir'],
+                                  settings.general['preparations_structure'][2], image_name + '.tif')
+        if not os.path.isfile(image_file):
+            continue
+
+        image = ndimage.imread(image_file,
+                               flatten=True)
         # Process candidates from that image
         filtered_cd = candidates[candidates['image'] == image_name]
         for index, cd in filtered_cd.iterrows():
@@ -66,6 +74,8 @@ def refresh_training_images(config, debug):
             misc.imsave(os.path.join(training_image_dir, subdir, filename), crop1)
 
     print 'done clipping. Writing dat files'
+    showwarning(title='Verify samples', message='Please verify that the negative sample images in %s are correct.' %
+                                                os.path.join(training_image_dir, 'negatives', 'img'))
 
     # save list of file names
     for directory in ['positives', 'negatives']:

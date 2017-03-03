@@ -39,12 +39,11 @@ def retrain_classifier(config, debug):
          executable=path_vec)
 
     # create folder to store classifier products
-    training_dir = os.path.join(new_classifier_dir, 'haar_training/')
-    if not os.path.exists(training_dir):
-        os.makedirs(training_dir)
+    if not os.path.exists(new_classifier_dir):
+        os.makedirs(new_classifier_dir)
     # convert classifier settings into list
     args = ['opencv_traincascade.exe']
-    args.extend(['-data', training_dir])
+    args.extend(['-data', new_classifier_dir])
     args.extend(['-vec', positives_xml_path])
     args.extend(['-bg', negatives_dat_path])
     for key, value in settings.haarClassiferArgs.iteritems():

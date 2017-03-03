@@ -43,7 +43,7 @@ def detect_objects_2d(config, debug):
                                  settings.general['iterations_structure'][0])
 
     # classifier data found here
-    classifier_xml = settings.inputs['classifier_default']
+    classifier_xml = config['classifier_path']
 
     # loop through each image
     for image_file in os.listdir(image_folder):

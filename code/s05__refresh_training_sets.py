@@ -11,7 +11,7 @@ import default_settings as s
 
 def refresh_training_sets(config, debug):
     # copy negative samples to one place
-    training_image_dir = os.path.join(config['iteration_directory'], s.general['iterations_structure'][0])
+    training_image_dir = os.path.join(config['iteration_directory'], s.general['iterations_structure']['refresh'])
     neg_dir = os.path.join(training_image_dir, 'negatives')
 
     # remove all previous

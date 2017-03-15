@@ -31,12 +31,12 @@ def clip_images_2d(config, debug):
 
     output_folder = os.path.join(settings.general['working_directory'],
                                  settings.general['preparations_subdir'],
-                                 settings.general['preparations_structure'][2])
+                                 settings.general['preparations_structure']['clip'])
 
     # Loop through files of projected boundaries
     boundary_folder = os.path.join(settings.general['working_directory'],
                                    settings.general['preparations_subdir'],
-                                   settings.general['preparations_structure'][1])
+                                   settings.general['preparations_structure']['proj_2d'])
 
     # Count files to work through:
     file_count = len([name for name in os.listdir('.') if os.path.isfile(name)])

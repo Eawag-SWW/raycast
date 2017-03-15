@@ -2,15 +2,15 @@
 
 # Modules
 
-from s1__project_boundary_3d import *
-from s2__project_boundary_2d import *
-from s3__clip_images_2d import *
-from s4__extract_initial_samples import *
-from s5__refresh_training_sets import *
-from s6__retrain_classifier import *
-from s7__detect_objects_2d import *
-from s8__cast_rays_3d import *
-from s9__cluster_3d import *
+from s01__project_boundary_3d import *
+from s02__project_boundary_2d import *
+from s03__clip_images_2d import *
+from s04__extract_initial_samples import *
+from s05__refresh_training_sets import *
+from s06__retrain_classifier import *
+from s07__detect_objects_2d import *
+from s08__cast_rays_3d import *
+from s09__cluster_3d import *
 from s11__fit_binary_model import *
 from s10__evaluate_candidates import *
 from s12__extract_candidate_images import *
@@ -39,12 +39,19 @@ def main():
         execute_steps(config=prep_config, structure=settings.general['preparations_structure'])
         helpers.write_step_to_log(prep_config, 'preparations done.')
 
-    # do iteration until it is stopped from within
-    while True:
-        # initialize current iteration
-        iter_config = initialize_iterations()
-        execute_steps(config=iter_config, structure=settings.general['iterations_structure'])
-        helpers.write_step_to_log(iter_config, 'iteration done.')
+    if settings.general['mode'] == 'training':
+        # do iteration until it is stopped from within
+        while True:
+            # initialize current iteration
+            iter_config = initialize_iterations()
+            execute_steps(config=iter_config, structure=settings.general['iterations_structure'])
+            helpers.write_step_to_log(iter_config, 'iteration done.')
+    elif settings.general['mode'] == 'detection':
+        # Run detection
+        steps = {k: settings.general['iterations_structure'][k] for k in ('detect', 'cast', 'cluster', 'evaluate')}
+        detect_config = initialize_detection()
+        execute_steps(config=detect_config, structure=steps)
+        helpers.write_step_to_log(detect_config, 'detection done.')
 
 
 def execute_steps(config, structure):
@@ -65,6 +72,8 @@ def execute_steps(config, structure):
 
 
 def get_next_step(current_step, structure):
+    structure = structure.values()
+    structure.sort()
     index = structure.index(current_step) + 1
     if index >= len(structure):
         return False
@@ -84,7 +93,7 @@ def initialize_directories():
     # check if working directories exist and create otherwise
     check_directory_structure(working_directory,
                               [settings.general['preparations_subdir'], settings.general['iterations_subdir']])
-    check_directory_structure(prep_dir, settings.general['preparations_structure'])
+    check_directory_structure(prep_dir, settings.general['preparations_structure'].values())
 
 
 def check_directory_structure(home_dir, structure):
@@ -107,7 +116,7 @@ def initialize_prep():
             preparations_position = lines[-1]
         else:
             # If the file is empty, then set a default starting position
-            preparations_position = settings.general['preparations_structure'][0]
+            preparations_position = settings.general['preparations_structure']['proj_3d']
         pass
 
     # determine whether to start directly with the iteration or start with preparatory work
@@ -116,6 +125,41 @@ def initialize_prep():
             "step_position": preparations_position,
             "stage": "preparations"}
 
+
+def initialize_detection():
+    check_directory_structure(settings.general['working_directory'], [settings.general['detection_subdir']])
+    detection_dir = os.path.join(settings.general['working_directory'], settings.general['detection_subdir'])
+
+    # make subdirs for each step of the detection
+    check_directory_structure(detection_dir, settings.general['iterations_structure'].values())
+
+    config = {
+        'stage': 'detection',
+        'generation': 1,
+        'iteration_directory': detection_dir
+    }
+    # append detection settings to config
+    config.update(settings.detection)
+
+    # check position in iteration from log file
+    with open(os.path.join(detection_dir, 'log.txt'), 'a+') as log:  # a+ means append new text to file
+        lines = log.readlines()
+        # try to read the last line.
+        if len(lines) > 0:
+            config['step_position'] = lines[-1]
+        else:
+            # If the file is empty, then set a default starting position
+            config['step_position'] = settings.general['iterations_structure']['detect']
+
+    # write iteration config settings to file
+    with open(os.path.join(detection_dir, 'config.txt'), 'w') as f:
+        result_writer = csv.DictWriter(f, delimiter=';', fieldnames=config.keys(),
+                                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        result_writer.writeheader()
+        result_writer.writerow(config)
+
+    return config
 
 def initialize_iterations():
     # if we are supposed to start a new iteration,
@@ -137,14 +181,14 @@ def initialize_iterations():
                 config['step_position'] = lines[-1]
             else:
                 # If the file is empty, then set a default starting position
-                config['step_position'] = settings.general['iterations_structure'][0]
+                config['step_position'] = settings.general['iterations_structure']['refresh']
 
         # if the last iteration was finished, start a new one if we haven't reached the limit
-        if (config['step_position'] == 'iteration done.') & (config['generation'] < settings.general['max_generations']):
+        if (config['step_position'] == 'iteration done.') & (int(config['generation']) < int(settings.general['max_generations'])):
             # start a new iteration
             config = create_iteration_dir(is_first=False, previous_iteration_dir=last_iteration_directory)
             # reset the position
-            config['step_position'] = settings.general['iterations_structure'][0]
+            config['step_position'] = settings.general['iterations_structure']['refresh']
 
         elif config['step_position'] != 'iteration done.':
             print 'continuing iteration'
@@ -188,9 +232,9 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
         config = {
             'generation': generation,
             'stage': 'iterations',
-            'neg_samples_initial_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure'][0],
+            'neg_samples_initial_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure']['refresh'],
                                                     'negatives', 'img'),
-            'neg_samples_new_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure'][7],
+            'neg_samples_new_dir': os.path.join(previous_iteration_dir, settings.general['iterations_structure']['extract'],
                                                 'negatives', 'img'),
             'iteration_directory': iteration_dir
         }
@@ -201,7 +245,7 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
             'stage': 'iterations',
             'neg_samples_initial_dir': os.path.join(settings.general['working_directory'],
                                                     settings.general['preparations_subdir'],
-                                                    settings.general['preparations_structure'][3],
+                                                    settings.general['preparations_structure']['extract'],
                                                     'images', 'negatives', 'img'),
             'neg_samples_new_dir': '',
             'iteration_directory': iteration_dir

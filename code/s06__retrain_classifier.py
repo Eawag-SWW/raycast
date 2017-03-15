@@ -18,12 +18,12 @@ import os
 def retrain_classifier(config, debug):
     # identify latest training data
     new_classifier_dir = os.path.join(config['iteration_directory'],
-                                      settings.general['iterations_structure'][1])
+                                      settings.general['iterations_structure']['retrain'])
     training_image_dir_pos = os.path.join(settings.general['working_directory'],
                                           settings.general['preparations_subdir'],
-                                          settings.general['preparations_structure'][3], 'images', 'positives')
+                                          settings.general['preparations_structure']['extract'], 'images', 'positives')
     training_image_dir_neg = os.path.join(config['iteration_directory'],
-                                          settings.general['iterations_structure'][0], 'negatives')
+                                          settings.general['iterations_structure']['refresh'], 'negatives')
 
     positives_dat_path = os.path.join(training_image_dir_pos, 'info.dat')
     negatives_dat_path = os.path.join(training_image_dir_neg, 'info.dat')
@@ -53,7 +53,7 @@ def retrain_classifier(config, debug):
         args.append('-' + key)
         args.append(str(value))
     args.extend(['-numPos', str(int(positives_numsamples * settings.classifer_training['positive_sample_ratio']))])
-    args.extend(['-numNeg', str(negatives_numsamples)])
+    args.extend(['-numNeg', str(min(negatives_numsamples, positives_numsamples*settings.classifer_training['neg_pos_ratio']))])
 
     print args
     # Call script to create train classifier

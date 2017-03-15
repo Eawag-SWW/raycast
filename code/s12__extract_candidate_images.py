@@ -26,11 +26,11 @@ from tkMessageBox import *
 def extract_candidate_images(config, debug, training_image_dir='', points_file=''):
     # Output of candidate images
     if training_image_dir == '':
-        training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][7])
+        training_image_dir = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['extract'])
 
     # Input of points
     if points_file == '':
-        points_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
+        points_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
                                    '3dpoints_evaluated.csv')
 
     for directory in ['positives/img', 'negatives/img']:
@@ -51,7 +51,7 @@ def extract_candidate_images(config, debug, training_image_dir='', points_file='
         sys.stdout.write('.')
         # Load image
         image_file = os.path.join(settings.general['working_directory'], settings.general['preparations_subdir'],
-                                  settings.general['preparations_structure'][2], image_name + '.tif')
+                                  settings.general['preparations_structure']['clip'], image_name + '.tif')
         if not os.path.isfile(image_file):
             continue
 

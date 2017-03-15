@@ -28,11 +28,11 @@ from s12__extract_candidate_images import *
 def extract_initial_samples(config, debug):
     output_file_points = os.path.join(s.general['working_directory'],
                                s.general['preparations_subdir'],
-                               s.general['preparations_structure'][3],
+                               s.general['preparations_structure']['extract'],
                                'initial_samples.csv')
     image_sample_dir = os.path.join(s.general['working_directory'],
                              s.general['preparations_subdir'],
-                             s.general['preparations_structure'][3],
+                             s.general['preparations_structure']['extract'],
                              'images')
     # read data from file
     dem_dataset = gdal.Open(s.inputs['demfile'])

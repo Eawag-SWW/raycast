@@ -49,7 +49,7 @@ def project_boundary_2d(config, debug):
         if os.path.isfile(os.path.join(settings.inputs['undistorted_image_folder'], camera_name+'.tif')):
             output_file = os.path.join(settings.general['working_directory'],
                                        settings.general['preparations_subdir'],
-                                       settings.general['preparations_structure'][1],
+                                       settings.general['preparations_structure']['proj_2d'],
                                        camera_name + '__boundary2D.json')
             # project and save
             project2d(output_file, camera, debug=debug)
@@ -82,7 +82,7 @@ def project2d(output_file, camera, debug=False):
     boundary3D = helpers.load_shape(os.path.join(
         settings.general['working_directory'],
         settings.general['preparations_subdir'],
-        settings.general['preparations_structure'][0],
+        settings.general['preparations_structure']['proj_3d'],
         'boundary3D.json'), driver='GeoJSON', debug=debug)
 
     # Register driver

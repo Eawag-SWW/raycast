@@ -32,20 +32,20 @@ def evaluate_candidates(config, debug):
     stats_file_points = os.path.join(settings.general['working_directory'], 'stats_points.txt')
     stats_file_clusters = os.path.join(settings.general['working_directory'], 'stats_clusters.txt')
     # a. point candidates
-    points_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][3], '3dpoints.csv')
-    points_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
+    points_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['cast'], '3dpoints.csv')
+    points_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
                               '3dpoints_evaluated.csv')
-    points_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
+    points_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
                                     '3dpoints_truth_evaluated.csv')
     # Do evaluation
-    evaluate_file(points_in, ground_truth_file, points_out, points_out_truth, stats_file_points, config['generation'])
+    # evaluate_file(points_in, ground_truth_file, points_out, points_out_truth, stats_file_points, config['generation'])
 
     # =====================================
     # b. clusters
-    clus_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][4], '3dclusters.csv')
-    clus_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
+    clus_in = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['cluster'], '3dclusters.csv')
+    clus_out = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
                             '3dclusters_evaluated.csv')
-    clus_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][5],
+    clus_out_truth = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
                                   '3dclusters_truth_evaluated.csv')
 
     # Do evaluation
@@ -65,8 +65,8 @@ def evaluate_file(candidate_file, truth_file, file_out, file_out_truth, stats_fi
     candidate_pts, candidate_bfrs = create_buffer(candidate_file, delimiter=' ')
 
     # Do evaluation
-    candidate_hits, candidate_misses = evaluate_points(candidate_pts, truth_bfrs, file_out)
-    truth_hits, truth_misses = evaluate_points(truth_pts, candidate_bfrs, file_out_truth)
+    candidate_hits, candidate_misses = evaluate_candidate_points(candidate_pts, truth_bfrs, file_out)
+    truth_hits, truth_misses = evaluate_truth_points(truth_pts, candidate_bfrs, file_out_truth)
 
     # Stats
     new_stats = {
@@ -107,7 +107,44 @@ def create_buffer(points_csv, delimiter):
     return points, buffers
 
 
-def evaluate_points(points, buffers, evaluated_pts_file):
+def evaluate_candidate_points(points, buffers, evaluated_pts_file):
+    evaluated = []
+    hits = 0
+    misses = 0
+
+    for row in points:
+        # Test whether the candidate is close to ground truth
+        point = Point(float(row['x']), float(row['y']))
+        if point.within(buffers):
+            row['is_match'] = 1
+            if row['is_obj'] == 0:
+                row['class'] = 'miss'
+                misses += 1
+            else:
+                row['class'] = 'hit'
+                hits += 1
+        else:
+            row['is_match'] = 0
+            if row['is_obj'] == 0:
+                row['class'] = 'true negative'
+            else:
+                row['class'] = 'false positive'
+                misses += 1
+        evaluated.append(row)
+
+    # Write evaluated candidates to file
+    with open(evaluated_pts_file, 'wb') as csv_file:
+        result_writer = csv.DictWriter(csv_file, delimiter=' ', fieldnames=evaluated[0].keys(),
+                                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        result_writer.writeheader()
+        result_writer.writerows(evaluated)
+
+    # Compute statistics
+
+    return hits, misses
+
+
+def evaluate_truth_points(points, buffers, evaluated_pts_file):
     evaluated = []
     hits = 0
     misses = 0
@@ -118,6 +155,7 @@ def evaluate_points(points, buffers, evaluated_pts_file):
         if point.within(buffers):
             row['is_match'] = 1
             hits += 1
+
         else:
             row['is_match'] = 0
             misses += 1

@@ -45,7 +45,7 @@ def project_boundary_3d(config, debug):
     # Create new, even if the last already exists, because otherwise there are problems
     filename = os.path.join(settings.general['working_directory'],
                             settings.general['preparations_subdir'],
-                            settings.general['preparations_structure'][0], 'boundary3D.json')
+                            settings.general['preparations_structure']['proj_3d'], 'boundary3D.json')
     if os.path.exists(filename):
         driver.DeleteDataSource(filename)
     dataSource = driver.CreateDataSource(filename)

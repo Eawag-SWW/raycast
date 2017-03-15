@@ -36,16 +36,18 @@ def detect_objects_2d(config, debug):
     # clipped images from preparations task are stored here
     image_folder = os.path.join(settings.general['working_directory'],
                                 settings.general['preparations_subdir'],
-                                settings.general['preparations_structure'][2])
+                                settings.general['preparations_structure']['clip'])
 
     # detected locations should be stored here
     output_folder = os.path.join(config['iteration_directory'],
-                                 settings.general['iterations_structure'][2])
+                                 settings.general['iterations_structure']['detect'])
 
     # classifier data found here
-    classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure'][1],
+    if settings.general['mode'] == 'iterations':
+        classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['retrain'],
                                             'cascade.xml')
-
+    elif settings.general['mode'] == 'detection':
+        classifier_xml = settings.detection['trained_img_classifier']
 
     # loop through each image
     for image_file in os.listdir(image_folder):
@@ -74,9 +76,11 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
     # detect objects
     detection_results = object_detector.detectMultiScale3(
         image,
-        scaleFactor=1000000,
-        minNeighbors=1,
-        outputRejectLevels=True
+        scaleFactor=settings.detection['classifier_scale_factor'],
+        minNeighbors=settings.detection['classifier_min_neighbors'],
+        outputRejectLevels=True,
+        minSize=(settings.detection['classifier_min_size'], settings.detection['classifier_min_size']),
+        maxSize=(settings.detection['classifier_max_size'], settings.detection['classifier_max_size'])
     )
     rects = detection_results[0]
     neighbors = detection_results[1]

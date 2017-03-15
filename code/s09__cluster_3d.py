@@ -23,6 +23,8 @@ import sklearn.cluster as skit
 import sklearn.neighbors as neighbors
 import os
 import numpy as np
+import pickle
+from sklearn import linear_model as sklim
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 import csv
@@ -35,13 +37,12 @@ buffer_dist = 0.2
 def cluster_3d(config, debug):
     # Where to get points from
     points_file = os.path.join(config['iteration_directory'],
-                               settings.general['iterations_structure'][3], '3dpoints.csv')
+                               settings.general['iterations_structure']['cast'], '3dpoints.csv')
 
     # Where to save clusters
     save_to_directory = os.path.join(config['iteration_directory'],
-                                     settings.general['iterations_structure'][4])
-    clusters_file = os.path.join(config['iteration_directory'],
-                                 settings.general['iterations_structure'][4], '3dclusters.csv')
+                                     settings.general['iterations_structure']['cluster'])
+    clusters_file = os.path.join(save_to_directory, '3dclusters.csv')
 
     # points = np.loadtxt(points_file)
 
@@ -67,50 +68,59 @@ def cluster_3d(config, debug):
     dissolved = cascaded_union(buffers)
 
     # count clusters
-    cluster_count = 0
-    for c in dissolved:
-        cluster_count += 1
+    cluster_count = len(dissolved)
     if debug:
         print str(cluster_count) + ' clusters found'
 
+    # load cluster classifier
+    # Classify clusters
+    if settings.general['mode'] == 'detection':
+        cluster_classifier = pickle.load(open(settings.detection['trained_cluster_classifier'], 'rb'))
+
+    # describe clusters
+    # Loop through clusters and analyze
+    for area in dissolved:
+
+        cluster = {
+            'count': 0,
+            'avg_score': 1,
+            'max_score': 0,
+            'area': area.area,
+            'x': area.centroid.x,
+            'y': area.centroid.y,
+            'density': 0
+        }
+        # Add points to clusters
+        for point in points:
+            if area.contains(point['geom']):
+                cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (
+                    cluster['count'] + 1)
+                cluster['max_score'] = max(cluster['max_score'], float(point['score']))
+                cluster['count'] += 1
+                # cluster['points'].append(point)
+
+        # compute density
+        cluster['density'] = cluster['count'] / cluster['area']
+        # clusters.append(cluster)
+        clusters.append(cluster)
+
+        # Classify clusters
+        if settings.general['mode'] == 'detection':
+            cluster['is_obj'] = cluster_classifier.predict(np.array([(cluster['count'],
+                                                                        cluster['area'],
+                                                                        cluster['density'],
+                                                                        cluster['avg_score'],
+                                                                        cluster['max_score'])]))[0]
+
     with open(clusters_file, 'wb') as csv_file:
-        cluster_writer = csv.writer(csv_file, delimiter=' ',
-                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        cluster_writer = csv.DictWriter(csv_file, delimiter=' ', fieldnames=clusters[0].keys(),
+                                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         # Write header
-        cluster_writer.writerow(['x', 'y', 'count', 'area', 'avg_score', 'max_score', 'density'])
+        cluster_writer.writeheader()
 
-        # Loop through clusters and analyze
-        for area in dissolved:
-
-            cluster = {
-                'count': 0,
-                'avg_score': 1,
-                'max_score': 0,
-                'area': area.area,
-                'points': [],
-                'centroid': [area.centroid.x, area.centroid.y]
-            }
-            # Add points to clusters
-            for point in points:
-                if area.contains(point['geom']):
-                    cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (
-                    cluster['count'] + 1)
-                    cluster['max_score'] = max(cluster['max_score'], float(point['score']))
-                    cluster['count'] += 1
-                    cluster['points'].append(point)
-
-            # print cluster
-            # clusters.append(cluster)
-            cluster_writer.writerow([
-                cluster['centroid'][0],
-                cluster['centroid'][1],
-                # cluster['centroid'][2],
-                cluster['count'],
-                cluster['area'],
-                cluster['avg_score'],
-                cluster['max_score'],
-                cluster['count'] / cluster['area']])
+        # Write clusters
+        cluster_writer.writerows(clusters)
 
     return 0
 

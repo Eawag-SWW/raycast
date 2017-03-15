@@ -38,14 +38,14 @@ import default_settings as settings
 def cast_rays_3d(config, debug):
     # Where to find the 2D clusters
     cluster_folder = os.path.join(config['iteration_directory'],
-                                  settings.general['iterations_structure'][2])
+                                  settings.general['iterations_structure']['detect'])
 
     # Where to store 3D points in memory
     # points_3d = np.empty([1, 5])
 
     # Where to save 3D points
     output_file = os.path.join(config['iteration_directory'],
-                               settings.general['iterations_structure'][3], '3dpoints.csv')
+                               settings.general['iterations_structure']['cast'], '3dpoints.csv')
 
     # Start saving data
     with open(output_file, 'wb') as csv_file:
@@ -80,7 +80,7 @@ def cast_rays_3d(config, debug):
 
             # if cluster_list_file != 'IMG_1105.csv': continue
 
-            print cluster_list_file
+            # print cluster_list_file
 
             # get image number
             image_index += 1

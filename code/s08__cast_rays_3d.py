@@ -50,7 +50,7 @@ def cast_rays_3d(config, debug):
     # Start saving data
     with open(output_file, 'wb') as csv_file:
 
-        point_writer = csv.writer(csv_file, delimiter=' ',
+        point_writer = csv.writer(csv_file, delimiter=',',
                                   quotechar='"', quoting=csv.QUOTE_MINIMAL)
         point_writer.writerow(['x', 'y', 'z', 'score', 'id', 'image', 'img_x', 'img_y'])
 

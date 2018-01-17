@@ -1,1 +1,1 @@
-from koeniz_settings import *
+from settings_adliswil_detection import *

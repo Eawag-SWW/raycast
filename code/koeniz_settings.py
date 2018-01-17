@@ -46,11 +46,12 @@ inputs = {
 }
 detection = {
     "trained_img_classifier": "../demo_data/classifier/demo_classifier.xml",
-    "trained_cluster_classifier": "C:/temp/pcdTest/iterations/2017-03-06 15.00.57/s11__fit_binary_model/logistic_regression.pkl",
+    "trained_cluster_classifier": "Q:/Abteilungsprojekte/eng/SWWData/Matthew/PhD_DATA/side_2016_raycast/analysis/Logistic models/32px_update_170427/7N/s11__fit_binary_model/logistic_regression.pkl",
+    # "trained_cluster_classifier": "C:/temp/pcdTest/iterations/2017-03-29 16.10.38/s11__fit_binary_model/logistic_regression.pkl",
     "classifier_min_size": 32,
     "classifier_max_size": 32,
-    "classifier_scale_factor": 1.1,
-    "classifier_min_neighbors": 2
+    "classifier_scale_factor": 99,
+    "classifier_min_neighbors": 7
 }
 
 image_clipping = {

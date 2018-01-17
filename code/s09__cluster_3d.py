@@ -23,161 +23,93 @@ import sklearn.cluster as skit
 import sklearn.neighbors as neighbors
 import os
 import numpy as np
-import pickle
-from sklearn import linear_model as sklim
+import pandas as pd
 from shapely.geometry import Point
 from shapely.ops import cascaded_union
 import csv
 import sys
 import default_settings as settings
 
-buffer_dist = 0.2
-
 
 def cluster_3d(config, debug):
     # Where to get points from
     points_file = os.path.join(config['iteration_directory'],
                                settings.general['iterations_structure']['cast'], '3dpoints.csv')
-
     # Where to save clusters
     save_to_directory = os.path.join(config['iteration_directory'],
                                      settings.general['iterations_structure']['cluster'])
     clusters_file = os.path.join(save_to_directory, '3dclusters.csv')
 
-    # points = np.loadtxt(points_file)
+    points_df = pd.read_csv(points_file)
 
-    points = []
-    buffers = []
-    clusters = []
+    # do clustering
+    clusters_df = cluster_dbscan(points_df,
+                                 neighborhood_size=settings.clustering_3d["neighborhood_size"],
+                                 min_samples=settings.clustering_3d["min_samples"])
 
-    # read data into a list of shapely points
-    with open(points_file, 'rb') as f:
-        reader = csv.DictReader(f, delimiter=' ')
-        for row in reader:
-            point = Point(float(row['x']), float(row['y']), float(row['z']))
-            points.append({
-                'geom': point,
-                'score': row['score'],
-                'image': row['image']
-            })
-            # create buffer
-            buffer = point.buffer(buffer_dist)
-            buffers.append(buffer)
-
-    # do union
-    dissolved = cascaded_union(buffers)
-
-    # count clusters
-    cluster_count = len(dissolved)
-    if debug:
-        print str(cluster_count) + ' clusters found'
-
-    # load cluster classifier
-    # Classify clusters
-    if settings.general['mode'] == 'detection':
-        cluster_classifier = pickle.load(open(settings.detection['trained_cluster_classifier'], 'rb'))
-
-    # describe clusters
-    # Loop through clusters and analyze
-    for area in dissolved:
-
-        cluster = {
-            'count': 0,
-            'avg_score': 1,
-            'max_score': 0,
-            'area': area.area,
-            'x': area.centroid.x,
-            'y': area.centroid.y,
-            'density': 0
-        }
-        # Add points to clusters
-        for point in points:
-            if area.contains(point['geom']):
-                cluster['avg_score'] = (cluster['avg_score'] * cluster['count'] + float(point['score'])) / (
-                    cluster['count'] + 1)
-                cluster['max_score'] = max(cluster['max_score'], float(point['score']))
-                cluster['count'] += 1
-                # cluster['points'].append(point)
-
-        # compute density
-        cluster['density'] = cluster['count'] / cluster['area']
-        # clusters.append(cluster)
-        clusters.append(cluster)
-
-        # Classify clusters
-        if settings.general['mode'] == 'detection':
-            cluster['is_obj'] = cluster_classifier.predict(np.array([(cluster['count'],
-                                                                        cluster['area'],
-                                                                        cluster['density'],
-                                                                        cluster['avg_score'],
-                                                                        cluster['max_score'])]))[0]
-
-    with open(clusters_file, 'wb') as csv_file:
-        cluster_writer = csv.DictWriter(csv_file, delimiter=' ', fieldnames=clusters[0].keys(),
-                                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        # Write header
-        cluster_writer.writeheader()
-
-        # Write clusters
-        cluster_writer.writerows(clusters)
+    # save
+    clusters_df.to_csv(clusters_file, index=False)
 
     return 0
 
 
+def cluster_dbscan(points, neighborhood_size, min_samples):
+    '''
+    Args:
+        point_coords: DataFrame of points
+        neighborhood_size: size of cluster
+        min_samples:
 
+    Returns:
+        clusters as df
+    '''
 
+    clusters = pd.DataFrame()
 
+    # Do clustering
+    point_coords = points.as_matrix(['x', 'y', 'z'])
+    cluster_labels = skit.DBSCAN(eps=neighborhood_size, min_samples=min_samples).fit_predict(point_coords)
+    points['cluster_label'] = cluster_labels
 
+    # compute cluster stats
+    grouped = points.groupby('cluster_label')
 
+    print('{n} clusters found'.format(n=len(grouped)))
+    for name, group in grouped:
+        if name >= 0:  # The first group contains unclustered points
+            # compute numDetection stats
+            img_grouped = group.groupby('image').aggregate(len)
+            neighbor_hist = list(pd.cut(np.array(img_grouped.cluster_label), range(15), right=True).value_counts())
+            ns = range(1, 15)
+            # Find max number of neighbors
+            n_max = 0
+            for idx, item in enumerate(neighbor_hist):
+                if item != 0:
+                    n_max = ns[idx]
+            # Find avg number of neighbors
+            n_avg = float(np.dot(neighbor_hist, ns))/np.sum(neighbor_hist)
 
+            # Area
+            area = (max(group.x) - min(group.x) + neighborhood_size) * (
+                max(group.y) - min(group.y) + neighborhood_size)
+            cluster = {
+                'count': [len(group)],
+                'image_count': [len(group.image.unique())],
+                'total_score': [sum(group.score)],
+                'avg_score': [float(sum(group.score))/len(group)],
+                'max_score': [max(group.score)],
+                'area': [area],  # area of cluster bbox
+                'x': [float(sum(group.x))/len(group)],
+                'y': [float(sum(group.y))/len(group)],
+                'z': [float(sum(group.z))/len(group)],
+                'density': [len(group)/area],
+                'N_max': n_max,
+                'N_avg': n_avg
+            }
+            for i in range(len(neighbor_hist)):
+                cluster['N'+str(ns[i])] = [neighbor_hist[i]]
 
+            # append to main dataframe
+            clusters = clusters.append(pd.DataFrame(cluster))
 
-
-
-
-
-
-
-
-
-    # # Clean data from outliers
-    # if debug:
-    #     print 'removing outliers...'
-    # threshold = 2
-    # n_neighbors = 5
-    # distances, indexes = np.array(neighbors.NearestNeighbors(radius=0.4, n_neighbors=n_neighbors).fit(points).kneighbors(points))
-    # # print weight_graph
-    # outliers = np.array(map(lambda point : point[1] > threshold, distances))
-    # # outliers = [row[1] for row in distances] > threshold
-    # print outliers
-    # # points_with_label = np.append(points, np.transpose([outliers]), axis=1)
-    # # filtered_points = filter(lambda p: p[3] is not True, points_with_label)
-    # filtered_points = points[not outliers]
-    #
-    # np.savetxt(os.path.join(save_to_directory, '3dfiltered.csv'), filtered_points)
-    #
-    # return 1
-    #
-    # # Compute clusters
-    # if debug:
-    #     print 'scanning clusters...'
-    #
-    # # MEANSHIFT
-    # bandwidth = skit.estimate_bandwidth(points, quantile=0.001, n_samples=None)
-    # centroids_ms = skit.MeanShift(bandwidth=bandwidth, bin_seeding=True).fit(points).cluster_centers_
-    #
-    # # DBSCAN
-    # point_clusters_dbs = skit.DBSCAN(eps=3, min_samples=5).fit_predict(points)
-    # points_with_clusters = np.append(points, np.transpose([point_clusters_dbs]), axis=1)
-    # centroids_dbscan = np.zeros([1,4])
-    #
-    # for cluster_name in range(len(point_clusters_dbs)):
-    #     cluster = np.array(filter(lambda p : p[3] == cluster_name, points_with_clusters))
-    #     if len(cluster) > 0:
-    #         centroid = np.mean(cluster, axis=0)
-    #         centroids_dbscan = np.append(centroids_dbscan, [centroid], axis=0)
-    #
-    # np.savetxt(os.path.join(save_to_directory, 'weight_matrix.csv'), weight_graph)
-    # np.savetxt(os.path.join(save_to_directory, '3dclusters_meanshift.csv'), centroids_ms)
-    # np.savetxt(os.path.join(save_to_directory, '3dclusters_dbscan.csv'), centroids_dbscan)
+    return clusters

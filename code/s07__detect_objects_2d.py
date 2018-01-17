@@ -43,7 +43,7 @@ def detect_objects_2d(config, debug):
                                  settings.general['iterations_structure']['detect'])
 
     # classifier data found here
-    if settings.general['mode'] == 'iterations':
+    if settings.general['mode'] == 'training':
         classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['retrain'],
                                             'cascade.xml')
     elif settings.general['mode'] == 'detection':
@@ -74,6 +74,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
     image, origin, cell_size, dimensions = readGeoTiff(image_file)
 
     # detect objects
+    # https://docs.opencv.org/3.0-beta/modules/objdetect/doc/cascade_classification.html
     detection_results = object_detector.detectMultiScale3(
         image,
         scaleFactor=settings.detection['classifier_scale_factor'],
@@ -83,7 +84,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
         maxSize=(settings.detection['classifier_max_size'], settings.detection['classifier_max_size'])
     )
     rects = detection_results[0]
-    neighbors = detection_results[1]
+    rejectlevels = detection_results[1]
     score = detection_results[2]
     print len(rects), ' object(s)'
 

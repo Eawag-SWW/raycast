@@ -22,7 +22,7 @@ import helpers
 import numpy as np
 import os
 import default_settings as s
-from s12__extract_candidate_images import *
+from s14__extract_candidate_images import *
 
 
 def extract_initial_samples(config, debug):

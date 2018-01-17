@@ -11,9 +11,11 @@ from s06__retrain_classifier import *
 from s07__detect_objects_2d import *
 from s08__cast_rays_3d import *
 from s09__cluster_3d import *
-from s11__fit_binary_model import *
 from s10__evaluate_candidates import *
-from s12__extract_candidate_images import *
+from s11__fit_classifiers import *
+from s12__classify_clusters import *
+from s13__precision_recall import  *
+from s14__extract_candidate_images import *
 import default_settings as settings
 import csv
 
@@ -48,7 +50,16 @@ def main():
             helpers.write_step_to_log(iter_config, 'iteration done.')
     elif settings.general['mode'] == 'detection':
         # Run detection
-        steps = {k: settings.general['iterations_structure'][k] for k in ('detect', 'cast', 'cluster', 'evaluate')}
+        detection_steps = [
+            'detect',
+            'cast',
+            'cluster',
+            'evaluate',
+            'fit',
+            'classify',
+            'prc'
+        ]
+        steps = {k: settings.general['iterations_structure'][k] for k in detection_steps}
         detect_config = initialize_detection()
         execute_steps(config=detect_config, structure=steps)
         helpers.write_step_to_log(detect_config, 'detection done.')
@@ -82,9 +93,7 @@ def get_next_step(current_step, structure):
 
 
 def initialize_directories():
-    """Configures the processing by setting up necessary file structure
-    and determining the starting point of the processing. The starting point is determined either
-    by reading the log file or can be imposed by the setting: Global>startingpoint."""
+    """Configures the processing by setting up necessary file structure."""
 
     # set up working directories
     working_directory = settings.general['working_directory']
@@ -221,7 +230,7 @@ def create_iteration_dir(is_first=True, previous_iteration_dir=''):
                                  datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"))
     os.makedirs(iteration_dir)
     # make subdirs for each step of the iteration
-    check_directory_structure(iteration_dir, settings.general['iterations_structure'])
+    check_directory_structure(iteration_dir, settings.general['iterations_structure'].values())
     if not is_first:
         with open(os.path.join(previous_iteration_dir, 'config.txt'),
                   'a+') as f:  # a+ means append new text to file

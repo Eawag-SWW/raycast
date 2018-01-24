@@ -51,7 +51,8 @@ def extract_candidate_images(config, debug, training_image_dir='', points_file='
         sys.stdout.write('.')
         # Load image
         image_file = os.path.join(settings.general['working_directory'], settings.general['preparations_subdir'],
-                                  settings.general['preparations_structure']['clip'], image_name + '.tif')
+                                  settings.general['preparations_structure']['clip'],
+                                  image_name + '.'+settings.inputs['image_extension'])
         if not os.path.isfile(image_file):
             continue
 

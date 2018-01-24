@@ -48,13 +48,12 @@ def fit_classifiers(config, debug):
     X = data.as_matrix(colnames_expl)
     y = data.as_matrix(['matched']).ravel()
 
-
     # create logistic regression model and train it
     classifiers = [
         KNeighborsClassifier(3),
         SVC(kernel="linear", C=0.025, probability=True),
         SVC(gamma=2, C=1, probability=True),
-        GaussianProcessClassifier(1.0 * RBF(1.0)),
+        # GaussianProcessClassifier(1.0 * RBF(1.0)),
         DecisionTreeClassifier(max_depth=5),
         RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
         MLPClassifier(alpha=1),
@@ -63,9 +62,17 @@ def fit_classifiers(config, debug):
         QuadraticDiscriminantAnalysis(),
         LogisticRegression()
     ]
-    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-             "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-             "Naive Bayes", "QDA", "LogisticRegression"]
+    names = ["Nearest Neighbors",
+             "Linear SVM",
+             "RBF SVM",
+             # "Gaussian Process",
+             "Decision Tree",
+             "Random Forest",
+             "Neural Net",
+             "AdaBoost",
+             "Naive Bayes",
+             "QDA",
+             "LogisticRegression"]
 
     # iterate over classifiers
     for name, clf in zip(names, classifiers):

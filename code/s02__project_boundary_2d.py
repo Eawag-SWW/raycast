@@ -42,19 +42,25 @@ def project_boundary_2d(config, debug):
     params = helpers.read_camera_params(settings.inputs['camera_xyz_offset'], settings.inputs['camera_params'])
 
     # Loop through images, project, clip, save
+    count = 0
     for camera in params:
         # pMatrix = camera['camera_matrix']
         camera_name = camera['camera_name'].split('.')[0]
         # check if the image actually exists in the project
-        if os.path.isfile(os.path.join(settings.inputs['undistorted_image_folder'], camera_name+'.tif')):
+        if os.path.isfile(os.path.join(
+                settings.inputs['undistorted_image_folder'], camera_name+'.'+settings.inputs['image_extension'])):
             output_file = os.path.join(settings.general['working_directory'],
                                        settings.general['preparations_subdir'],
                                        settings.general['preparations_structure']['proj_2d'],
                                        camera_name + '__boundary2D.json')
             # project and save
             project2d(output_file, camera, debug=debug)
+            count += 1
 
         pass
+
+    if count == 0:
+        raise NameError('no images processed. Check configuration')
 
     # call next function
     return 0

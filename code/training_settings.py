@@ -3,6 +3,7 @@ general = {
     "preparations_subdir": "preparations",
     "iterations_subdir": "iterations",
     "detection_subdir": "detection",
+    "clf_training_subdir": "clf_training",
     "stats_subdir": "performance",
     "startingpoint": "Auto",
     "epsg": 21781,

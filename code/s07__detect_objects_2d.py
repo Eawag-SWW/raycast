@@ -46,7 +46,7 @@ def detect_objects_2d(config, debug):
     if settings.general['mode'] == 'training':
         classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['retrain'],
                                             'cascade.xml')
-    elif settings.general['mode'] == 'detection':
+    elif settings.general['mode'] in ['detection', 'classifier_training'] :
         classifier_xml = settings.detection['trained_img_classifier']
 
     # loop through each image

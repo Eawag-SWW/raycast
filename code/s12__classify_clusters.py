@@ -30,7 +30,11 @@ import csv
 
 def classify_clusters(config, debug):
     # Classifier locations
-    clf_folder = os.path.join(config['iteration_directory'], s.general['iterations_structure']['fit'])
+    if s.general['mode'] == 'detection':
+        clf_folder = s.classification['fitted_classifier_folder']
+    else:
+        clf_folder = os.path.join(config['iteration_directory'], s.general['iterations_structure']['fit'])
+
     # evaluated clusters file
     cluster_file = os.path.join(config['iteration_directory'], s.general['iterations_structure']['evaluate'],
                                 '3dclusters_evaluated.csv')

@@ -157,6 +157,8 @@ def extract_candidate_images(training_image_dir, points, debug):
     # load blacklist
     blacklist = pd.read_csv(s.inputs['ground_truth_blacklist'])
 
+    # Make a list of already seen negatives
+    already_seen_negatives = []
     # for each image, extract samples from that image.
     for image_name in list(candidates.image.unique()):
         sys.stdout.write('.')
@@ -175,10 +177,15 @@ def extract_candidate_images(training_image_dir, points, debug):
         filtered_cd = candidates[candidates['image'] == image_name]
         # Get blacklist for image
         filtered_blacklist = blacklist[blacklist['img'] == image_name]
+
         # Go through all candidates
         for index, cd in filtered_cd.iterrows():
-            # if not in blacklist
-            if cd['id'] not in list(filtered_blacklist.id):
+            # if is ground truth and not in blacklist
+            if cd.matched and (cd['id'] not in list(filtered_blacklist.id)):
+                # Clip image
+                make_samples(point=cd, image=image, is_positive=cd['matched'], save_dir=training_image_dir)
+            elif (not cd.matched) and (cd.id not in already_seen_negatives):
+                already_seen_negatives.append(cd.id)
                 # Clip image
                 make_samples(point=cd, image=image, is_positive=cd['matched'], save_dir=training_image_dir)
 
@@ -244,7 +251,7 @@ def make_samples(point, image, is_positive, save_dir):
 
 def delete_all_files(folder):
     files = os.listdir(folder)
-    if len(files)>0:
+    if len(files) > 0:
         print('deleting files in {}'.format(folder))
     for the_file in files:
         file_path = os.path.join(folder, the_file)

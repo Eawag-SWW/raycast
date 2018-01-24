@@ -178,7 +178,7 @@ def initialize_iterations():
                 config['step_position'] = settings.general['iterations_structure']['train']
 
         # if the last iteration was finished, start a new one if we haven't reached the limit
-        if (config['step_position'] == 'iteration done.') & (int(config['generation']) < int(settings.general['max_generations'])):
+        if (config['step_position'] == 'iteration done.') & (int(config['generation']) <= int(settings.general['folds'])):
             # start a new iteration
             config = create_iteration_dir(is_first=False, previous_iteration_dir=last_iteration_directory)
             # reset the position

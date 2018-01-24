@@ -38,25 +38,28 @@ def detect_objects_2d(config, debug):
                                 settings.general['preparations_subdir'],
                                 settings.general['preparations_structure']['clip'])
 
-    # detected locations should be stored here
-    output_folder = os.path.join(config['iteration_directory'],
-                                 settings.general['iterations_structure']['detect'])
+    # loop through folds
+    for fold_i in range(settings.general['folds']):
+        # detected locations should be stored here
+        output_folder = os.path.join(config['iteration_directory'],
+                                     settings.general['iterations_structure']['detect'],
+                                     'fold_{}'.format(fold_i))
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        # classifier data found here
+        classifier_xml = os.path.join(config['iteration_directory'],
+                                      settings.general['iterations_structure']['train'],
+                                      'classifier_{}'.format(fold_i), 'cascade.xml')
 
-    # classifier data found here
-    if settings.general['mode'] == 'training':
-        classifier_xml = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['retrain'],
-                                            'cascade.xml')
-    elif settings.general['mode'] in ['detection', 'classifier_training'] :
-        classifier_xml = settings.detection['trained_img_classifier']
 
-    # loop through each image
-    for image_file in os.listdir(image_folder):
-        image_name = os.path.splitext(image_file)[0]
-        cascade_detect(
-            image_name,
-            os.path.join(image_folder, image_file),
-            output_folder,
-            classifier_xml)
+        # loop through each image
+        for image_file in os.listdir(image_folder):
+            image_name = os.path.splitext(image_file)[0]
+            cascade_detect(
+                image_name,
+                os.path.join(image_folder, image_file),
+                output_folder,
+                classifier_xml)
 
     return 0
 

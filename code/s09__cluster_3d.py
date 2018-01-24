@@ -32,23 +32,26 @@ import default_settings as settings
 
 
 def cluster_3d(config, debug):
-    # Where to get points from
-    points_file = os.path.join(config['iteration_directory'],
-                               settings.general['iterations_structure']['cast'], '3dpoints.csv')
     # Where to save clusters
     save_to_directory = os.path.join(config['iteration_directory'],
                                      settings.general['iterations_structure']['cluster'])
-    clusters_file = os.path.join(save_to_directory, '3dclusters.csv')
 
-    points_df = pd.read_csv(points_file)
+    for fold_i in range(settings.general['folds']):
+        print('-- FOLD {} --'.format(fold_i))
+        # Where to get points from
+        points_file = os.path.join(config['iteration_directory'],
+                                   settings.general['iterations_structure']['cast'], '3dpoints_{}.csv'.format(fold_i))
+        clusters_file = os.path.join(save_to_directory, '3dclusters_{}.csv'.format(fold_i))
 
-    # do clustering
-    clusters_df = cluster_dbscan(points_df,
-                                 neighborhood_size=settings.clustering_3d["neighborhood_size"],
-                                 min_samples=settings.clustering_3d["min_samples"])
+        points_df = pd.read_csv(points_file)
 
-    # save
-    clusters_df.to_csv(clusters_file, index=False)
+        # do clustering
+        clusters_df = cluster_dbscan(points_df,
+                                     neighborhood_size=settings.clustering_3d["neighborhood_size"],
+                                     min_samples=settings.clustering_3d["min_samples"])
+
+        # save
+        clusters_df.to_csv(clusters_file, index=False)
 
     return 0
 

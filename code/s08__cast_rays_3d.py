@@ -28,8 +28,10 @@ Tools:
 """
 
 import os
+from glob import glob
 import vtk
 import numpy as np
+import pandas as pd
 import helpers
 import csv
 import default_settings as settings
@@ -40,58 +42,48 @@ def cast_rays_3d(config, debug):
     cluster_folder = os.path.join(config['iteration_directory'],
                                   settings.general['iterations_structure']['detect'])
 
-    # Where to store 3D points in memory
-    # points_3d = np.empty([1, 5])
+    # Get camera calibration information
+    camera_params = helpers.read_camera_params(
+        settings.inputs['camera_xyz_offset'],
+        settings.inputs['camera_params'])
 
-    # Where to save 3D points
-    output_file = os.path.join(config['iteration_directory'],
-                               settings.general['iterations_structure']['cast'], '3dpoints.csv')
+    # Load 3D mesh
+    print 'Loading 3D mesh...'
+    mesh = loadSTL(settings.inputs['3dmesh'])
 
-    # Start saving data
-    with open(output_file, 'wb') as csv_file:
+    # Load mesh offset
+    with open(settings.inputs['3dmesh_offset'], 'r') as offsetfile:
+        mesh_offset = np.array(map(float, offsetfile.readlines()[0].split()))
 
-        point_writer = csv.writer(csv_file, delimiter=',',
-                                  quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        point_writer.writerow(['x', 'y', 'z', 'score', 'id', 'image', 'img_x', 'img_y'])
+    # build OBB tree for fast intersection search
+    print 'Building OBB tree...'
+    obbTree = vtk.vtkOBBTree()
+    obbTree.SetDataSet(mesh)
+    obbTree.BuildLocator()
 
-        # Get camera calibration information
-        camera_params = helpers.read_camera_params(
-            settings.inputs['camera_xyz_offset'],
-            settings.inputs['camera_params'])
+    for fold_i in range(settings.general['folds']):
+        print('-- FOLD {} --'.format(fold_i))
 
-        # Load 3D mesh
-        print 'Loading 3D mesh...'
-        mesh = loadSTL(settings.inputs['3dmesh'])
-
-        # Load mesh offset
-        with open(settings.inputs['3dmesh_offset'], 'r') as offsetfile:
-            mesh_offset = np.array(map(float, offsetfile.readlines()[0].split()))
-
-        # build OBB tree for fast intersection search
-        print 'Building OBB tree...'
-        obbTree = vtk.vtkOBBTree()
-        obbTree.SetDataSet(mesh)
-        obbTree.BuildLocator()
-
-        image_index = 0
-
-        # compute 3d points
-        for cluster_list_file in os.listdir(cluster_folder):
-
-            # if cluster_list_file != 'IMG_1105.csv': continue
-
-            # print cluster_list_file
-
-            # get image number
-            image_index += 1
+        # initialize result lists
+        r = {
+            'x': [],
+            'y': [],
+            'z': [],
+            'score': [],
+            'id': [],
+            'image': [],
+            'img_x': [],
+            'img_y': []
+        }
+                    # compute 3d points
+        for cluster_list_file in glob(cluster_folder + '/fold_{}/*.csv'.format(fold_i)):
 
             # read clusters
-            cluster_list = np.loadtxt(os.path.join(cluster_folder, cluster_list_file), skiprows=1, delimiter=';',
+            cluster_list = np.loadtxt(cluster_list_file, skiprows=1, delimiter=';',
                                       ndmin=2)
 
             # fetch parameters for image
-            this_cam_params = \
-            filter(lambda c: c['camera_name'].split('.')[0] == cluster_list_file.split('.')[0], camera_params)[0]
+            this_cam_params = filter(lambda c: c['camera_name'].split('.')[0] == os.path.basename(cluster_list_file).split('.')[0], camera_params)[0]
 
             # compute camera transforms
             KRt = np.dot(np.dot(this_cam_params['K'], this_cam_params['R']), this_cam_params['t'])
@@ -122,17 +114,31 @@ def cast_rays_3d(config, debug):
                     pointsVTKIntersectionData = pointsVTKintersection.GetData()
                     noPointsVTKIntersection = pointsVTKIntersectionData.GetNumberOfTuples()
                     (x, y, z) = pointsVTKIntersectionData.GetTuple3(0)
-                    point_writer.writerow([
-                        x + mesh_offset[0],
-                        y + mesh_offset[1],
-                        z + mesh_offset[2],
-                        cluster[2],  # the score of the cluster
-                        int(cluster[3]),  # the id of the cluster
-                        cluster_list_file.split('.')[0],  # the image in which the cluster was detected
-                        int(X2d[0][0] / zval),  # image coordinates
-                        int(X2d[1][0] / zval)])
-                    # points_3d = np.append(points_3d, new_point_3d, axis=0)
-                    # point_writer.writerow(new_point_3d)
+                    # append results to list
+                    r['x'].append(x + mesh_offset[0])
+                    r['y'].append(y + mesh_offset[1])
+                    r['z'].append(z + mesh_offset[2])
+                    r['score'].append(cluster[2])  # the score of the cluster
+                    r['id'].append(int(cluster[3]))  # the id of the cluster
+                    r['image'].append(cluster_list_file.split('.')[0])  # the image in which the cluster was detected
+                    r['img_x'].append(int(X2d[0][0] / zval))  # image coordinates
+                    r['img_y'].append(int(X2d[1][0] / zval))
+
+        # write results to dataframe
+        # Where to save 3D points
+        output_file = os.path.join(config['iteration_directory'],
+                                   settings.general['iterations_structure']['cast'],
+                                   '3dpoints_{}.csv'.format(fold_i))
+        pd.DataFrame({
+            'x': r['x'],
+            'y': r['y'],
+            'z': r['z'],
+            'score': r['score'],
+            'id': r['id'],
+            'image': r['image'],
+            'img_x': r['img_x'],
+            'img_y': r['img_y']
+        }).to_csv(output_file)
 
     return 0
 

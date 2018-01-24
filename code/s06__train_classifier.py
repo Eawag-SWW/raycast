@@ -65,7 +65,7 @@ def train_classifier(config, debug):
             args.append('-' + key)
             args.append(str(value))
         num_pos = int(positives_numsamples * s.classifer_training['positive_sample_ratio'])
-        num_neg = min(negatives_numsamples, int(positives_numsamples * s.classifer_training['neg_pos_ratio']))
+        num_neg = min(negatives_numsamples, int(positives_numsamples * s.classifer_training['positive_sample_ratio'] * s.classifer_training['neg_pos_ratio']))
         args.extend(['-numPos', str(num_pos)])
         args.extend(['-numNeg', str(num_neg)])
 
@@ -75,6 +75,6 @@ def train_classifier(config, debug):
         call(args=args, executable=os.path.join(s.general['opencv'], 'opencv_traincascade.exe'))
         # logfile.close()
 
-        return 1
+
 
     return 0

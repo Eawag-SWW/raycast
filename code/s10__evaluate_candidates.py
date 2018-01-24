@@ -23,29 +23,27 @@ import datetime
 # Todo: only evaluate classifier results within the working area in which positives were identified
 
 def evaluate_candidates(config, debug):
-    if not settings.evaluation['do_evaluation']:
-        return 0
 
-    # input files
-    ground_truth_file = settings.inputs['ground_truth']
-    stats_file_clusters = os.path.join(settings.general['working_directory'], 'stats_clusters.txt')
-    clusters_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['cluster'],
-                                 '3dclusters.csv')
-    # output files
-    clusters_eval_file = os.path.join(config['iteration_directory'],
-                                      settings.general['iterations_structure']['evaluate'],
-                                      '3dclusters_evaluated.csv')
-    misses_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
-                               '3dclusters_truth_evaluated.csv')
+    for fold_i in range(settings.general['folds']):
+        print('-- FOLD {} --'.format(fold_i))
+        # input files
+        ground_truth_file = settings.inputs['ground_truth']
+        clusters_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['cluster'],
+                                     '3dclusters_{}.csv'.format(fold_i))
+        # output files
+        clusters_eval_file = os.path.join(config['iteration_directory'],
+                                          settings.general['iterations_structure']['evaluate'],
+                                          '3dclusters_{}.csv'.format(fold_i))
+        misses_file = os.path.join(config['iteration_directory'], settings.general['iterations_structure']['evaluate'],
+                                   'misses_{}.csv'.format(fold_i))
 
-    # Do evaluation
-    evaluate_clusters(clusters_file, ground_truth_file, clusters_eval_file, misses_file, stats_file_clusters,
-                      config['generation'])
+        # Do evaluation
+        evaluate_clusters(clusters_file, ground_truth_file, clusters_eval_file, misses_file, config['generation'])
 
     return 0
 
 
-def evaluate_clusters(candidate_file, truth_file, clusters_eval_file, misses_file, stats_file, generation):
+def evaluate_clusters(candidate_file, truth_file, clusters_eval_file, misses_file, generation):
     # Load data
     ground_truth = read_point_file(truth_file, delimiter=settings.inputs['ground_truth_csv_delimiter'])
     clusters = pd.read_csv(candidate_file)
@@ -54,6 +52,7 @@ def evaluate_clusters(candidate_file, truth_file, clusters_eval_file, misses_fil
     clusters.sort_values('total_score', ascending=False)
     # Add column value
     clusters['matched'] = False
+    clusters['matched_id'] = 999
 
     # Do evaluation
     for i, cluster in clusters.iterrows():
@@ -63,6 +62,7 @@ def evaluate_clusters(candidate_file, truth_file, clusters_eval_file, misses_fil
         for gt in ground_truth:
             if gt['point'].within(buffer) & (not gt['matched']):
                 clusters.set_value(i, 'matched', True)
+                clusters.set_value(i, 'matched_id', gt['id'])
                 gt['matched'] = True
 
     # write clusters
@@ -78,36 +78,24 @@ def evaluate_clusters(candidate_file, truth_file, clusters_eval_file, misses_fil
         result_writer.writerows([p for p in ground_truth if not p['matched']])
 
     # Stats
-    candidates = len(clusters)
-    ground_truth_count = len(ground_truth)
-    hits = len(clusters[clusters['matched'] == True])
-    false_alerts = len(clusters[clusters['matched'] == False])
-    misses = len([p for p in ground_truth if not p['matched']])
-    new_stats = {
-        'datetime': datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"),
-        'generation': generation,
-        'neighbors': settings.detection['classifier_min_neighbors'],
-        'window_size': settings.detection['classifier_min_size'],
-        'candidates': candidates,
-        'ground_truth': ground_truth_count,
-        'hits': hits,
-        'false_alerts': false_alerts,
-        'misses': misses,
-        'precision': float(hits) / (float(candidates)),
-        'recall': float(hits) / float(ground_truth_count)
-    }
-
-    # Write stats to file
-    write_header = False
-    if not os.path.isfile(stats_file):
-        write_header = True
-
-    with open(stats_file, 'a+') as f:
-        result_writer = csv.DictWriter(f, delimiter=',', fieldnames=new_stats.keys(),
-                                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        if write_header:
-            result_writer.writeheader()
-        result_writer.writerows([new_stats])
+    # candidates = len(clusters)
+    # ground_truth_count = len(ground_truth)
+    # hits = len(clusters[clusters['matched'] == True])
+    # false_alerts = len(clusters[clusters['matched'] == False])
+    # misses = len([p for p in ground_truth if not p['matched']])
+    # print({
+    #     'datetime': datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"),
+    #     'generation': generation,
+    #     'neighbors': settings.detection['classifier_min_neighbors'],
+    #     'window_size': settings.detection['classifier_min_size'],
+    #     'candidates': candidates,
+    #     'ground_truth': ground_truth_count,
+    #     'hits': hits,
+    #     'false_alerts': false_alerts,
+    #     'misses': misses,
+    #     'precision': float(hits) / (float(candidates)),
+    #     'recall': float(hits) / float(ground_truth_count)
+    # })
 
     return 0
 

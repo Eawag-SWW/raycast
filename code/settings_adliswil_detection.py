@@ -9,7 +9,7 @@ general = {
     "epsg": 21781,
     "gdalwarp": "C:/Program Files/QGIS Essen/bin/gdalwarp.exe",
     "opencv": "C:/opt/opencv/build/x64/vc14/bin",
-    "start_new_iteration": True,
+    "start_new_iteration": False,
     "preparations_structure": {
         "proj_3d": 's01__project_boundary_3d',
         "proj_2d": 's02__project_boundary_2d',
@@ -58,7 +58,7 @@ detection = {
     "classifier_min_size": 28,
     "classifier_max_size": 28,
     "classifier_scale_factor": 999,
-    "classifier_min_neighbors": 0
+    "classifier_min_neighbors": 3
 }
 image_clipping = {
     "image_ground_size": 200,
@@ -66,29 +66,29 @@ image_clipping = {
 clustering_3d = {
     "maximumdistance": 0.1,
     "neighborhood_size": 0.2,
-    "min_samples": 4
+    "min_samples": 6
 }
 evaluation = {
     "do_evaluation": True,
     "acceptance_radius": 0.5,
 }
 sample_preparations = {
-    'width': 40,
-    'height': 40,
+    'width': 32,
+    'height': 32,
     "locations_file": "../demo_data/seed_locations.csv",
     "csv_delimiter": ",",
-    "augmentation_ratio_positives": 5,
+    "augmentation_ratio_positives": 1,
     "augmentation_ratio_negatives": 1
 }
 training_images = {
-    'width': 40,
-    'height': 40,
+    'width': 32,
+    'height': 32,
     "positives_file": "../demo_data/training/positives.csv",
     "negatives_file": "../demo_data/training/negatives.csv",
     "csv_delimiter": ","
 }
 haarClassiferArgs = {
-    'numStages': 15,
+    'numStages': 10,
     'precalcValBufSize': 4048,
     'precalcIdxBufSize': 4048,
     'featureType': 'Haar',
@@ -99,14 +99,14 @@ haarClassiferArgs = {
     'maxWeakCount': 20,
     'bt': 'GAB',
     'mode': 'ALL',
-    'w': 40,
-    'h': 40
+    'w': 32,
+    'h': 32
 }
 classifer_training = {
-    # Use a fraction of samples in each training stage
-    'positive_sample_ratio': 1.0/haarClassiferArgs['numStages'],
+    # Use a fraction of positive samples - some will be discarded and need to be replaced by others
+    'positive_sample_ratio': 0.4,
     # Ratio of negative to positive samples. Taking too many negative samples is not recommended
-    'neg_pos_ratio': 0.9
+    'neg_pos_ratio': 2
 }
 
 classification = {

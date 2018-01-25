@@ -120,7 +120,7 @@ def cast_rays_3d(config, debug):
                     r['z'].append(z + mesh_offset[2])
                     r['score'].append(cluster[2])  # the score of the cluster
                     r['id'].append(int(cluster[3]))  # the id of the cluster
-                    r['image'].append(cluster_list_file.split('.')[0])  # the image in which the cluster was detected
+                    r['image'].append(os.path.basename(cluster_list_file).split('.')[0])  # the image in which the cluster was detected
                     r['img_x'].append(int(X2d[0][0] / zval))  # image coordinates
                     r['img_y'].append(int(X2d[1][0] / zval))
 

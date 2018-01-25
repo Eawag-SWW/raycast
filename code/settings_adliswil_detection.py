@@ -66,7 +66,7 @@ image_clipping = {
 clustering_3d = {
     "maximumdistance": 0.1,
     "neighborhood_size": 0.2,
-    "min_samples": 6
+    "min_samples": 4
 }
 evaluation = {
     "do_evaluation": True,

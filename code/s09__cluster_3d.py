@@ -82,8 +82,8 @@ def cluster_dbscan(points, neighborhood_size, min_samples):
         if name >= 0:  # The first group contains unclustered points
             # compute numDetection stats
             img_grouped = group.groupby('image').aggregate(len)
-            neighbor_hist = list(pd.cut(np.array(img_grouped.cluster_label), range(15), right=True).value_counts())
-            ns = range(1, 15)
+            neighbor_hist = list(pd.cut(np.array(img_grouped.cluster_label), range(20), right=True).value_counts())
+            ns = range(1, 20)
             # Find max number of neighbors
             n_max = 0
             for idx, item in enumerate(neighbor_hist):
@@ -110,7 +110,7 @@ def cluster_dbscan(points, neighborhood_size, min_samples):
                 'N_avg': n_avg
             }
             for i in range(len(neighbor_hist)):
-                cluster['N'+str(ns[i])] = [neighbor_hist[i]]
+                cluster['n'+str(ns[i])] = [neighbor_hist[i]]
 
             # append to main dataframe
             clusters = clusters.append(pd.DataFrame(cluster))

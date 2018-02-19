@@ -36,7 +36,7 @@ def cluster_3d(config, debug):
     save_to_directory = os.path.join(config['iteration_directory'],
                                      settings.general['iterations_structure']['cluster'])
 
-    for fold_i in range(settings.general['folds']):
+    for fold_i in range(settings.general['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
         # Where to get points from
         points_file = os.path.join(config['iteration_directory'],
@@ -69,6 +69,20 @@ def cluster_dbscan(points, neighborhood_size, min_samples):
 
     clusters = pd.DataFrame()
 
+    # If no z dim exists, create it
+    if 'z' not in points.columns:
+        points['z'] = 0
+
+    # If no image name exists, create it
+    if 'image' not in points.columns:
+        points['image'] = 'ortho'
+
+    # If no score col exists, rename n col
+    if 'score' not in points.columns:
+        if 'n' in points.columns:
+            points = points.rename(index=str, columns={'n': 'score'})
+
+
     # Do clustering
     point_coords = points.as_matrix(['x', 'y', 'z'])
     cluster_labels = skit.DBSCAN(eps=neighborhood_size, min_samples=min_samples).fit_predict(point_coords)
@@ -82,15 +96,16 @@ def cluster_dbscan(points, neighborhood_size, min_samples):
         if name >= 0:  # The first group contains unclustered points
             # compute numDetection stats
             img_grouped = group.groupby('image').aggregate(len)
-            neighbor_hist = list(pd.cut(np.array(img_grouped.cluster_label), range(20), right=True).value_counts())
-            ns = range(1, 20)
+            ns = range(0, 54, 9)
+            neighbor_hist = list(pd.cut(np.array(img_grouped.cluster_label), ns, right=True).value_counts())
+
             # Find max number of neighbors
             n_max = 0
             for idx, item in enumerate(neighbor_hist):
                 if item != 0:
                     n_max = ns[idx]
             # Find avg number of neighbors
-            n_avg = float(np.dot(neighbor_hist, ns))/np.sum(neighbor_hist)
+            n_avg = float(np.dot(neighbor_hist, ns[1:]))/np.sum(neighbor_hist)
 
             # Area
             area = (max(group.x) - min(group.x) + neighborhood_size) * (
@@ -109,8 +124,8 @@ def cluster_dbscan(points, neighborhood_size, min_samples):
                 'N_max': n_max,
                 'N_avg': n_avg
             }
-            for i in range(len(neighbor_hist)):
-                cluster['n'+str(ns[i])] = [neighbor_hist[i]]
+            # for i in range(len(neighbor_hist)):
+            #     cluster['n'+str(ns[i])] = [neighbor_hist[i]]
 
             # append to main dataframe
             clusters = clusters.append(pd.DataFrame(cluster))

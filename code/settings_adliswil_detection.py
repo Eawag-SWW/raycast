@@ -1,5 +1,5 @@
 general = {
-    "working_directory": "C:/temp/raycast/adliswil_new",
+    "working_directory": "C:/temp/raycast/adliswil_more_training_data",
     "preparations_subdir": "preparations",
     "iterations_subdir": "iterations",
     "detection_subdir": "detection",
@@ -23,20 +23,27 @@ general = {
                              "cluster": 's09__cluster_3d',
                              "evaluate": 's10__evaluate_candidates',
                              "fit": 's11__fit_classifiers',
-                             "classify": 's12__classify_clusters',
-                             "prc": 's13__precision_recall',
-                             "extract": 's14__extract_candidate_images'},
+                             "detect_ortho": 's15__detect_ortho',
+                             "ortho_cluster": 's16__ortho_cluster',
+                             "ortho_evaluate": 's17__ortho_evaluate_candidates',
+                             "ortho_fit": 's18__ortho_fit_classifiers'
+                             # "classify": 's12__classify_clusters',
+                             # "prc": 's13__precision_recall',
+                             # "extract": 's14__extract_candidate_images'
+                             },
     "max_generations": 1,
-    "folds": 5
+    "folds": 5,
+    "do_folds": 5  # how many of the folds to process
 }
 inputs = {
     "boundary_file": "../demo_data/boundary/boundary2D.shp",
     "demfile": "../demo_data/dem/DEM.tif",
-    "3dmesh": "../demo_data/mesh/adliswil_mesh_blender.stl",
-    "3dmesh_offset": "../demo_data/mesh/mesh_offset.xyz",
+    "3dmesh": "Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/mesh/adliswil_mesh.stl",
+    "3dmesh_offset": "Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/mesh/adliswil_mesh_offset.xyz",
     "classifier_default": "../demo_data/classifier/demo_classifier.xml",
     "binary_model_default": "../demo_data/classifier/binary_model.py",
     "undistorted_image_folder": "Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/undistorted_images",
+    "orthophoto": "Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/orthoimage/adliswil_ortho_clipped.tif",
     # "undistorted_image_folder": "../demo_data/images",
     "image_extension": "tif",
     "camera_params": "../demo_data/image_params/l1_calibrated_camera_parameters.txt",
@@ -54,19 +61,24 @@ inputs = {
 
 detection = {
     "trained_img_classifier": "../demo_data/classifier/demo_classifier.xml",
-    "trained_cluster_classifier": "Q:/Messdaten/floodVisionData/side_2016_raycast/analysis/Logistic models/32px_update_170427/3N/s11__fit_binary_model\logistic_regression.pkl",
+    "trained_cluster_classifier": "Q:/Messdaten/floodVisionData/side_2016_raycast/analysis/Logistic models/32px_update_170427/3N/s11__fit_binary_model/logistic_regression.pkl",
     "classifier_min_size": 28,
     "classifier_max_size": 28,
     "classifier_scale_factor": 999,
-    "classifier_min_neighbors": 3
+    "classifier_min_neighbors": 0
 }
 image_clipping = {
     "image_ground_size": 200,
 }
 clustering_3d = {
     "maximumdistance": 0.1,
-    "neighborhood_size": 0.2,
-    "min_samples": 4
+    "neighborhood_size": 0.25,
+    "min_samples": 5
+}
+clustering_ortho = {
+    "maximumdistance": 0.1,
+    "neighborhood_size": 0.25,
+    "min_samples": 5
 }
 evaluation = {
     "do_evaluation": True,
@@ -77,18 +89,19 @@ sample_preparations = {
     'height': 32,
     "locations_file": "../demo_data/seed_locations.csv",
     "csv_delimiter": ",",
-    "augmentation_ratio_positives": 1,
-    "augmentation_ratio_negatives": 1
+    "augmentation_ratio_positives": 3,
+    "augmentation_ratio_negatives": 2
 }
 training_images = {
     'width': 32,
     'height': 32,
     "positives_file": "../demo_data/training/positives.csv",
     "negatives_file": "../demo_data/training/negatives.csv",
-    "csv_delimiter": ","
+    "csv_delimiter": ",",
+    "negatives_rating_threshold": 0.001  # negative proposals are hard negatives and come with a score
 }
 haarClassiferArgs = {
-    'numStages': 10,
+    'numStages': 15,
     'precalcValBufSize': 4048,
     'precalcIdxBufSize': 4048,
     'featureType': 'Haar',
@@ -104,7 +117,7 @@ haarClassiferArgs = {
 }
 classifer_training = {
     # Use a fraction of positive samples - some will be discarded and need to be replaced by others
-    'positive_sample_ratio': 0.4,
+    'positive_sample_ratio': 0.8,
     # Ratio of negative to positive samples. Taking too many negative samples is not recommended
     'neg_pos_ratio': 2
 }

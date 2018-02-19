@@ -17,11 +17,15 @@ from s11__fit_classifiers import *
 from s12__classify_clusters import *
 from s13__precision_recall import  *
 from s14__extract_candidate_images import *
+from s15__detect_ortho import *
+from s16__ortho_cluster import ortho_cluster
+from s17__ortho_evaluate_candidates import *
+from s18__ortho_fit_classifiers import *
 import default_settings as settings
 import csv
 
 # Global variables
-debug = True
+debug = False
 
 
 def main():

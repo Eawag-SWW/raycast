@@ -61,7 +61,7 @@ def cast_rays_3d(config, debug):
     obbTree.SetDataSet(mesh)
     obbTree.BuildLocator()
 
-    for fold_i in range(settings.general['folds']):
+    for fold_i in range(settings.general['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
 
         # initialize result lists

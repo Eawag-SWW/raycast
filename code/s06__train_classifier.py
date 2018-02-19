@@ -34,9 +34,9 @@ def train_classifier(config, debug):
     negatives_numsamples = len(os.listdir(os.path.join(training_image_dir_neg, 'img')))
 
     # loop through folds
-    for fold_i in range(s.general['folds']):
+    for fold_i in range(1, s.general['do_folds']):
+        print('-- FOLD {} --'.format(fold_i))
         # create positive examples xml
-        print('training fold {}'.format(fold_i))
         positives_dat_path = os.path.join(positives_dat_dir, 'info_{}.dat'.format(fold_i))
         positives_xml_path = os.path.join(config['iteration_directory'],
                                           s.general['iterations_structure']['train'],

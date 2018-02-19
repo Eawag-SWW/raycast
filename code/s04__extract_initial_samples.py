@@ -61,7 +61,10 @@ def extract_initial_samples(config, debug):
 
         # Transform and save samples
         print ('extracting image coordinates for each sample')
-        valid_2d = get_2d(points3d=points_3d, params=params, output_file=output_file_points)
+        valid_2d = get_2d(points3d=points_3d,
+                          params=params,
+                          output_file=output_file_points,
+                          rating_threshold=s.training_images['negatives_rating_threshold'])
 
     # Clip samples
     print ('clipping samples')
@@ -163,8 +166,7 @@ def extract_candidate_images(training_image_dir, points, debug):
     for image_name in list(candidates.image.unique()):
         sys.stdout.write('.')
         # Load image
-        image_file = os.path.join(s.general['working_directory'], s.general['preparations_subdir'],
-                                  s.general['preparations_structure']['clip'],
+        image_file = os.path.join(s.inputs['undistorted_image_folder'],
                                   image_name + '.' + s.inputs['image_extension'])
         # image_file = os.path.join("Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/original_images",
         #                           image_name + '.jpg') #  '+settings.inputs['image_extension'])

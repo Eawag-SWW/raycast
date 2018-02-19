@@ -39,7 +39,8 @@ def detect_objects_2d(config, debug):
                                 settings.general['preparations_structure']['clip'])
 
     # loop through folds
-    for fold_i in range(settings.general['folds']):
+    for fold_i in range(settings.general['do_folds']):
+        print('-- FOLD {} --'.format(fold_i))
         # detected locations should be stored here
         output_folder = os.path.join(config['iteration_directory'],
                                      settings.general['iterations_structure']['detect'],
@@ -56,7 +57,6 @@ def detect_objects_2d(config, debug):
         for image_file in os.listdir(image_folder):
             image_name = os.path.splitext(image_file)[0]
             cascade_detect(
-                image_name,
                 os.path.join(image_folder, image_file),
                 output_folder,
                 classifier_xml)
@@ -65,7 +65,8 @@ def detect_objects_2d(config, debug):
 
 
 # Function for detecting objects
-def cascade_detect(image_name, image_file, output_folder, classifier_xml):
+def cascade_detect(image_path, output_folder, classifier_xml):
+    image_name = os.path.splitext(os.path.basename(image_path)[0])
     # Load classifier from data
     object_detector = cv2.CascadeClassifier(classifier_xml)
     # Check that it was successful
@@ -74,7 +75,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
         quit()
 
     # read image
-    image, origin, cell_size, dimensions = readGeoTiff(image_file)
+    image, origin, cell_size, dimensions = readGeoTiff(image_path)
 
     # detect objects
     # https://docs.opencv.org/3.0-beta/modules/objdetect/doc/cascade_classification.html
@@ -89,7 +90,7 @@ def cascade_detect(image_name, image_file, output_folder, classifier_xml):
     rects = detection_results[0]
     rejectlevels = detection_results[1]
     score = detection_results[2]
-    print len(rects), ' object(s)'
+    print('{} objects found in {}'.format(len(rects), image_name))
 
     # save under this filename
     output_file = os.path.join(output_folder, image_name + '.csv')
@@ -114,4 +115,4 @@ def write_data2csv(rects, score, origin, cell_size, output_file):
         # write to CSV
         np.savetxt(output_file, points, header="x;y;n;id", delimiter=";", comments='')
 
-    print 'objects written to ', output_file
+

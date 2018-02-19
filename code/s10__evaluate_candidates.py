@@ -2,7 +2,7 @@
 Args:
  - evaluate results based on truth file
 Writes:
- - each point or cluster candidate is evaluated and tagged as correct or incorrect
+ - each cluster candidate is evaluated and tagged as correct or incorrect
    - location: [project home directory]/10_evaluate_candidates/
    - format: TO BE DEFINED
 Tasks:
@@ -24,7 +24,7 @@ import datetime
 
 def evaluate_candidates(config, debug):
 
-    for fold_i in range(s.general['folds']):
+    for fold_i in range(s.general['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
         # input files
         ground_truth_file = s.inputs['ground_truth']
@@ -59,7 +59,7 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     gt_test = pd.read_csv(test_list)
 
     # Re-order clusters (this is important)
-    clusters.sort_values('total_score', ascending=False)
+    clusters.sort_values(['image_count', 'count'], ascending=False)
     # Add column value
     clusters['matched'] = False
     clusters['matched_id'] = 999
@@ -68,6 +68,7 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     # Dataframe of misses
     misses = pd.DataFrame(ground_truth, columns=['x', 'y', 'id'])
     misses.columns.values[2] = 'matched_id'
+    misses.matched_id = pd.to_numeric(misses.matched_id)
     # Add column value
     misses['matched'] = True
     misses['missed'] = True
@@ -105,24 +106,6 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     train_clusters.to_csv(out_clusters_train_file, index=False)
     test_clusters.to_csv(out_clusters_test_file, index=False)
 
-    # Stats
-    # candidates = len(clusters)
-    # ground_truth_count = len(ground_truth)
-    # hits = len(clusters[clusters['matched'] == True])
-    # false_alerts = len(clusters[clusters['matched'] == False])
-    # misses = len([p for p in ground_truth if not p['matched']])
-    # print({
-    #     'datetime': datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"),
-    #     'neighbors': settings.detection['classifier_min_neighbors'],
-    #     'window_size': settings.detection['classifier_min_size'],
-    #     'candidates': candidates,
-    #     'ground_truth': ground_truth_count,
-    #     'hits': hits,
-    #     'false_alerts': false_alerts,
-    #     'misses': misses,
-    #     'precision': float(hits) / (float(candidates)),
-    #     'recall': float(hits) / float(ground_truth_count)
-    # })
 
     return 0
 
@@ -135,6 +118,7 @@ def read_point_file(filename, delimiter):
             row['point'] = Point(float(row['x']), float(row['y']))
             row['buffer'] = row['point'].buffer(float(s.evaluation['acceptance_radius']))
             row['matched'] = False
+            row['id'] = int(row['id'])
             points.append(row)
     return points
 

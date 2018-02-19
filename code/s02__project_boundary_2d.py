@@ -71,8 +71,6 @@ def project2d(output_file, camera, debug=False):
     if debug:
         print 'working on ', output_file
 
-    print_calc = debug
-
     # calculate fixed offset for projection
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
 

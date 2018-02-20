@@ -1,4 +1,4 @@
-from s10__evaluate_candidates import evaluate_clusters
+from s11__evaluate_candidates import evaluate_clusters
 import os
 import default_settings as s
 

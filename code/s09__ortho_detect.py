@@ -17,7 +17,7 @@ import helpers
 
 
 
-def detect_ortho(config, debug):
+def ortho_detect(config, debug):
     # clipped orthophoto location
     ortho_path = s.inputs['orthophoto']
 
@@ -26,7 +26,7 @@ def detect_ortho(config, debug):
         print('-- FOLD {} --'.format(fold_i))
         # detected locations should be stored here
         output_folder = os.path.join(config['iteration_directory'],
-                                     s.general['iterations_structure']['detect_ortho'],
+                                     s.general['iterations_structure']['ortho_detect'],
                                      'fold_{}'.format(fold_i))
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)

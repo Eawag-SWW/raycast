@@ -1,5 +1,5 @@
 
-from s11__fit_classifiers import do_fit_classifiers
+from s12__fit_classifiers import do_fit_classifiers
 import default_settings as s
 import os
 

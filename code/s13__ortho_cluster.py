@@ -8,7 +8,7 @@ import os
 from glob import glob
 import default_settings as s
 import pandas as pd
-from s09__cluster_3d import cluster_dbscan
+from s10__cluster_3d import cluster_dbscan
 
 def ortho_cluster(config, debug):
 
@@ -22,7 +22,7 @@ def ortho_cluster(config, debug):
         print('-- FOLD {} --'.format(fold_i))
         # Where to get points from
         points_dir = os.path.join(config['iteration_directory'],
-                                   s.general['iterations_structure']['detect_ortho'],
+                                   s.general['iterations_structure']['ortho_detect'],
                                    'fold_{}'.format(fold_i))
         points_file = os.path.join(
             points_dir,

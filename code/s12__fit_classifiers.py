@@ -115,10 +115,17 @@ def do_fit_classifiers(config, results_folder_root, input_folder):
             y_test_predict = clf.predict_proba(X_test)
 
             # attach predictions onto data (attention! predictions only exist for non-misses)
-            data_train = pd.concat([pd.concat([data_train_no_misses, pd.DataFrame({'rating': list(y_train_predict[:, 1])})], axis=1),
-                                   data_train[data_train.missed]], axis=0, join='outer').fillna(0)
-            data_test = pd.concat([pd.concat([data_test_no_misses, pd.DataFrame({'rating': list(y_test_predict[:, 1])})], axis=1),
-                                  data_test[data_test.missed]], axis=0, join='outer').fillna(0)
+            data_train = pd.concat([
+                pd.concat([
+                    data_train_no_misses.reset_index(drop=True),
+                    pd.DataFrame({'rating': list(y_train_predict[:, 1])})], axis=1, ),
+                data_train[data_train.missed]], axis=0, join='outer', ignore_index=True).fillna(0)
+
+            data_test = pd.concat([
+                pd.concat([
+                    data_test_no_misses.reset_index(drop=True),
+                    pd.DataFrame({'rating': list(y_test_predict[:, 1])})], axis=1, ),
+                data_test[data_test.missed]], axis=0, join='outer', ignore_index=True).fillna(0)
 
             # write to files
             data_train.to_csv(os.path.join(results_folder, '3dclusters_train_{}.csv'.format(fold_i)))
@@ -126,7 +133,7 @@ def do_fit_classifiers(config, results_folder_root, input_folder):
 
             # attach misses to data
             y_test_with_misses = np.append(y_test, y_test_misses, axis=0)
-            y_test_predict_with_misses = np.append(y_test_predict, np.zeros((len(y_test_misses), 2)), axis=0)
+            y_test_predict_with_misses = np.append(y_test_predict, np.zeros((len(y_test_misses), 2)), axis=0, )
             # add precision recall curves to plot
             ax = update_plot(ax, y_test_with_misses, y_test_predict_with_misses[:, 1], fold_i)
 

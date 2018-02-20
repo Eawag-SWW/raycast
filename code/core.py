@@ -11,16 +11,13 @@ from s05__create_folds import *
 from s06__train_classifier import *
 from s07__detect_objects_2d import *
 from s08__cast_rays_3d import *
-from s09__cluster_3d import *
-from s10__evaluate_candidates import *
-from s11__fit_classifiers import *
-from s12__classify_clusters import *
-from s13__precision_recall import  *
-from s14__extract_candidate_images import *
-from s15__detect_ortho import *
-from s16__ortho_cluster import ortho_cluster
-from s17__ortho_evaluate_candidates import *
-from s18__ortho_fit_classifiers import *
+from s10__cluster_3d import *
+from s11__evaluate_candidates import *
+from s12__fit_classifiers import *
+from s09__ortho_detect import *
+from s13__ortho_cluster import ortho_cluster
+from s14__ortho_evaluate_candidates import *
+from s15__ortho_fit_classifiers import *
 import default_settings as settings
 import csv
 
@@ -171,15 +168,19 @@ def initialize_iterations():
         with open(os.path.join(last_iteration_directory, 'config.txt'), 'r') as f:
             config = next(csv.DictReader(f, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL))
 
-        # check position in iteration from log file
-        with open(os.path.join(last_iteration_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
-            lines = log.readlines()
-            # try to read the last line.
-            if len(lines) > 0:
-                config['step_position'] = lines[-1]
-            else:
-                # If the file is empty, then set a default starting position
-                config['step_position'] = settings.general['iterations_structure']['train']
+        if settings.general['startingpoint'] == '':
+            # check position in iteration from log file
+            with open(os.path.join(last_iteration_directory, 'log.txt'), 'a+') as log:  # a+ means append new text to file
+                lines = log.readlines()
+                # try to read the last line.
+                if len(lines) > 0:
+                    config['step_position'] = lines[-1]
+                else:
+                    # If the file is empty, then set a default starting position
+                    config['step_position'] = settings.general['iterations_structure']['train']
+        else:
+            # use the starting point defined in the settings
+            config['step_position'] = settings.general['startingpoint']
 
         # if the last iteration was finished, start a new one if we haven't reached the limit
         if (config['step_position'] == 'iteration done.') & (int(config['generation']) <= int(settings.general['folds'])):

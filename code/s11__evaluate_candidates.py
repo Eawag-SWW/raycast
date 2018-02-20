@@ -86,7 +86,7 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
                 misses = misses[misses.matched_id != gt['id']]
 
     # Combine misses and clusters
-    clusters_and_misses = clusters.append(misses)
+    clusters_and_misses = clusters.append(misses, ignore_index=True)
 
     # Separate train and test positive clusters
     train_positives = clusters_and_misses[clusters_and_misses.matched_id.isin(gt_train.id)]
@@ -99,8 +99,8 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     test_negatives = false_alerts[~false_alert_train_mask]
 
     # merge positives and negatives
-    train_clusters = train_positives.append(train_negatives)
-    test_clusters = test_positives.append(test_negatives)
+    train_clusters = train_positives.append(train_negatives, ignore_index=True)
+    test_clusters = test_positives.append(test_negatives, ignore_index=True)
 
     # write clusters
     train_clusters.to_csv(out_clusters_train_file, index=False)

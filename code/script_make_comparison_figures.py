@@ -1,9 +1,10 @@
-import default_settings as s
+from default_settings import all as s
 import os
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, auc
 import pandas as pd
 import seaborn as sns
+
 sns.set(color_codes=True)
 from itertools import compress
 
@@ -24,16 +25,16 @@ iteration_name = '2018-01-25 17.43.50'
 
 def main():
     multi_view_results_dir_root = os.path.join(
-        s.general['working_directory'],
-        s.general['iterations_subdir'],
+        s['general']['working_directory'],
+        s['general']['iterations_subdir'],
         iteration_name,
-        s.general['iterations_structure']['fit'])
+        s['general']['iterations_structure']['fit'])
 
     single_view_results_dir_root = os.path.join(
-        s.general['working_directory'],
-        s.general['iterations_subdir'],
+        s['general']['working_directory'],
+        s['general']['iterations_subdir'],
         iteration_name,
-        s.general['iterations_structure']['ortho_fit'])
+        s['general']['iterations_structure']['ortho_fit'])
 
     for classifier in classifier_names:
         if (os.path.exists(os.path.join(multi_view_results_dir_root, classifier)) &
@@ -42,9 +43,11 @@ def main():
             f, ax = initialize_plot(classifier)
 
             # loop through folds and load data
-            for fold_i in range(s.general['do_folds']):
-                file_multi_view = os.path.join(multi_view_results_dir_root, classifier, '3dclusters_test_{}.csv'.format(fold_i))
-                file_single_view = os.path.join(single_view_results_dir_root, classifier, '3dclusters_test_{}.csv'.format(fold_i))
+            for fold_i in range(s['general']['do_folds']):
+                file_multi_view = os.path.join(multi_view_results_dir_root, classifier,
+                                               '3dclusters_test_{}.csv'.format(fold_i))
+                file_single_view = os.path.join(single_view_results_dir_root, classifier,
+                                                '3dclusters_test_{}.csv'.format(fold_i))
 
                 # load data
                 data_multi = pd.read_csv(file_multi_view)
@@ -58,7 +61,7 @@ def main():
                 update_plot(ax, y_real_multi, y_real_single, y_predicted_multi, y_predicted_single)
 
             plot_filename = os.path.join(
-                s.general['working_directory'],
+                s['general']['working_directory'],
                 'iterations',
                 iteration_name, 'plots',
                 'prc_{}.png'.format(classifier))
@@ -90,24 +93,24 @@ def boxplot(data, classifier_name):
     ax[0].set_title('Single-view')
     ax[1].set_title('Multi-view')
     ax[0].violinplot([list(single.true),
-                   list(single.false)],
-                    # notch=True,  # notch shape
-                    # vert=True,  # vertical box alignment
-                    # patch_artist=True,  # fill with color
-                    )  # will be used to label x-ticks
+                      list(single.false)],
+                     # notch=True,  # notch shape
+                     # vert=True,  # vertical box alignment
+                     # patch_artist=True,  # fill with color
+                     )  # will be used to label x-ticks
     ax[1].violinplot([list(multi.true),
-                   list(multi.false)],
-                    # notch=True,  # notch shape
-                    # vert=True,  # vertical box alignment
-                    # patch_artist=True,  # fill with color
-                    )  # will be used to label x-ticks
+                      list(multi.false)],
+                     # notch=True,  # notch shape
+                     # vert=True,  # vertical box alignment
+                     # patch_artist=True,  # fill with color
+                     )  # will be used to label x-ticks
     ax[0].set_xticklabels(labels)
     ax[1].set_xticklabels(labels)
     plot_file = os.path.join(
-                s.general['working_directory'],
-                'iterations',
-                iteration_name, 'plots',
-                'boxplot_{}.png'.format(classifier_name))
+        s['general']['working_directory'],
+        'iterations',
+        iteration_name, 'plots',
+        'boxplot_{}.png'.format(classifier_name))
     f.tight_layout()
     f.savefig(plot_file)
 
@@ -131,7 +134,7 @@ def update_plot(ax, y_real_multi, y_real_single, y_predicted_multi, y_predicted_
     ax.y_real_multi += list(y_real_multi)
     ax.y_predicted_multi += list(y_predicted_multi)
 
-    #Singleview
+    # Singleview
     precision, recall, _ = precision_recall_curve(y_real_single, y_predicted_single)
     ax.plot(recall[recall < 1], precision[recall < 1], linestyle=':', color='#afafaf')
     # update list containing results from all folds
@@ -151,5 +154,6 @@ def finalize_plot(f, ax, plot_file):
     f.tight_layout()
     f.savefig(plot_file)
     # plt.show()
+
 
 main()

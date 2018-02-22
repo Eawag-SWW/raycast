@@ -6,7 +6,7 @@ all = {
         "detection_subdir": "detection",
         "clf_training_subdir": "clf_training",
         "stats_subdir": "performance",
-        "startingpoint": "s12__fit_classifiers",
+        "startingpoint": "s10__cluster_3d",
         "epsg": 21781,
         "gdalwarp": "C:/Program Files/QGIS Essen/bin/gdalwarp.exe",
         "opencv": "C:/opt/opencv/build/x64/vc14/bin",
@@ -25,9 +25,9 @@ all = {
                                  "cluster": 's10__cluster_3d',
                                  "evaluate": 's11__evaluate_candidates',
                                  "fit": 's12__fit_classifiers',
-                                 # "ortho_cluster": 's13__ortho_cluster',
-                                 # "ortho_evaluate": 's14__ortho_evaluate_candidates',
-                                 # "ortho_fit": 's15__ortho_fit_classifiers'
+                                 "ortho_cluster": 's13__ortho_cluster',
+                                 "ortho_evaluate": 's14__ortho_evaluate_candidates',
+                                 "ortho_fit": 's15__ortho_fit_classifiers'
                                  },
         "max_generations": 1,
         "folds": 5,

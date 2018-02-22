@@ -64,11 +64,17 @@ def execute_steps(config, structure, settings_mod):
         helpers.write_step_to_log(config=config, line=step)
         print '### ' + step
         r = globals()[step.split('__')[1]](config, debug, settings_mod)
-        if r != 0:
+        if r == 1:
             print 'Error code raised'
             quit()
-
-        step = get_next_step(step, structure)
+        elif r == 2:
+            print 'Clustering settings invalid'
+            if step == 's10__cluster_3d':
+                step = 's13__ortho_cluster'
+            else:
+                step = 'iteration done.'
+        else:
+            step = get_next_step(step, structure)
         if not step:
             step = 'iteration done.'
     return 0
@@ -219,7 +225,7 @@ def latest_iteration_dir(settings):
             os.path.join(settings['general']['working_directory'], settings['general']['iterations_subdir']),
             sorted(iteration_dirs, reverse=True)[0])  # get latest iteration
     else:
-        return create_iteration_dir()['iteration_directory']
+        return create_iteration_dir(settings)['iteration_directory']
 
 
 def create_iteration_dir(settings, is_first=True, previous_iteration_dir=''):
@@ -285,4 +291,5 @@ def update_settings(d, u):
     return d
 
 # run program
-run_all()
+if __name__ == "__main__":
+    run_all()

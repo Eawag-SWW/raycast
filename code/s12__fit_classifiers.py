@@ -23,7 +23,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 # from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 import pickle
 import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve, auc
+from sklearn.metrics import precision_recall_curve, auc, average_precision_score
 import datetime
 
 
@@ -36,12 +36,14 @@ def fit_classifiers(config, debug, settings):
         config=config,
         results_folder_root=results_folder_root,
         input_folder=input_folder,
-        settings=settings)
+        settings=settings,
+        view_mode='multi-view'
+    )
 
     return 0
 
 
-def do_fit_classifiers(config, results_folder_root, input_folder, settings):
+def do_fit_classifiers(config, results_folder_root, input_folder, settings, view_mode=''):
     # create logistic regression model and train it
     classifiers = [
         # KNeighborsClassifier(3),
@@ -117,8 +119,13 @@ def do_fit_classifiers(config, results_folder_root, input_folder, settings):
                 pickle.dump(clf, fid)
 
             # predict train and test
-            y_train_predict = clf.predict_proba(X_train)
-            y_test_predict = clf.predict_proba(X_test)
+            try:
+                y_train_predict = clf.predict_proba(X_train)
+                y_test_predict = clf.predict_proba(X_test)
+            except ValueError:
+                print('problem with data... must be outlier')
+                return 0
+
 
             # attach predictions onto data (attention! predictions only exist for non-misses)
             data_train = pd.concat([
@@ -148,17 +155,18 @@ def do_fit_classifiers(config, results_folder_root, input_folder, settings):
         average_precision = finalize_plot(f, ax, plot_file)
         # write results to file
         results_file = os.path.join(results_folder_root, 'average_precision_log.csv')
-        log_results(average_precision, settings, name, results_file)
+        log_results(average_precision, settings, name, view_mode, results_file)
 
 
     return 0
 
 
-def log_results(average_precision, settings, classifier_name, results_file):
+def log_results(average_precision, settings, classifier_name, view_mode, results_file):
     if not os.path.exists(results_file):
         # create file
         results_log = pd.DataFrame({
             'classifier': [],
+            'mode':[],
             'cluster_epsilon': [],
             'cluster_min_count': [],
             'average_precision': [],
@@ -168,16 +176,17 @@ def log_results(average_precision, settings, classifier_name, results_file):
         # read file
         results_log = pd.read_csv(results_file)
 
-    results_log = results_log.append({
+    results_log = results_log.append(pd.DataFrame({
             'classifier': [classifier_name],
+            'mode': [view_mode],
             'cluster_epsilon': [settings['clustering_3d']['neighborhood_size']],
             'cluster_min_count': [settings['clustering_3d']['min_samples']],
             'average_precision': [average_precision],
             'datetime': [datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")]
-        })
+        }), ignore_index=True)
 
     # write to file
-    results_log.to_csv(results_file)
+    results_log.to_csv(results_file, index=False)
 
 
 def initialize_plot(classifier_name):
@@ -193,7 +202,7 @@ def initialize_plot(classifier_name):
 
 def update_plot(ax, y_real, y_proba, fold_i):
     precision, recall, _ = precision_recall_curve(y_real, y_proba)
-    lab = 'Fold %d AUC=%.4f' % (fold_i + 1, auc(recall, precision))
+    lab = 'Fold %d AP=%.4f' % (fold_i + 1, average_precision_score(y_real, y_proba))
     ax.step(recall[recall < 1], precision[recall < 1], label=lab, where='post')
     # update list containing results from all folds
     ax.y_real += list(y_real)
@@ -203,8 +212,8 @@ def update_plot(ax, y_real, y_proba, fold_i):
 
 def finalize_plot(f, ax, plot_file):
     precision, recall, _ = precision_recall_curve(ax.y_real, ax.y_proba)
-    average_precision = auc(recall, precision)
-    lab = 'Overall AUC=%.4f' % average_precision
+    average_precision = average_precision_score(ax.y_real, ax.y_proba)
+    lab = 'Overall AP=%.4f' % average_precision
     ax.step(recall[recall < 1], precision[recall < 1], label=lab, lw=2, color='black', where='post')
     ax.legend(loc='lower left', fontsize='small')
     f.tight_layout()

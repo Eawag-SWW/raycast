@@ -6,12 +6,11 @@ Creates training image sets for the new generation of classifier
 
 import os
 import shutil
-import default_settings as s
 
 
-def refresh_training_sets(config, debug):
+def refresh_training_sets(config, debug, settings):
     # copy negative samples to one place
-    training_image_dir = os.path.join(config['iteration_directory'], s.general['iterations_structure']['refresh'])
+    training_image_dir = os.path.join(config['iteration_directory'], settings['general']['iterations_structure']['refresh'])
     neg_dir = os.path.join(training_image_dir, 'negatives')
 
     # remove all previous

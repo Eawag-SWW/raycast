@@ -29,27 +29,26 @@ import cv2
 import os
 import numpy as np
 from helpers import readGeoTiff
-import default_settings as settings
 
 
-def detect_objects_2d(config, debug):
+def detect_objects_2d(config, debug, settings):
     # clipped images from preparations task are stored here
-    image_folder = os.path.join(settings.general['working_directory'],
-                                settings.general['preparations_subdir'],
-                                settings.general['preparations_structure']['clip'])
+    image_folder = os.path.join(settings['general']['working_directory'],
+                                settings['general']['preparations_subdir'],
+                                settings['general']['preparations_structure']['clip'])
 
     # loop through folds
-    for fold_i in range(settings.general['do_folds']):
+    for fold_i in range(settings['general']['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
         # detected locations should be stored here
         output_folder = os.path.join(config['iteration_directory'],
-                                     settings.general['iterations_structure']['detect'],
+                                     settings['general']['iterations_structure']['detect'],
                                      'fold_{}'.format(fold_i))
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
         # classifier data found here
         classifier_xml = os.path.join(config['iteration_directory'],
-                                      settings.general['iterations_structure']['train'],
+                                      settings['general']['iterations_structure']['train'],
                                       'classifier_{}'.format(fold_i), 'cascade.xml')
 
 
@@ -59,13 +58,14 @@ def detect_objects_2d(config, debug):
             cascade_detect(
                 os.path.join(image_folder, image_file),
                 output_folder,
-                classifier_xml)
+                classifier_xml,
+                settings)
 
     return 0
 
 
 # Function for detecting objects
-def cascade_detect(image_path, output_folder, classifier_xml):
+def cascade_detect(image_path, output_folder, classifier_xml, settings):
     image_name = os.path.splitext(os.path.basename(image_path)[0])
     # Load classifier from data
     object_detector = cv2.CascadeClassifier(classifier_xml)
@@ -81,11 +81,11 @@ def cascade_detect(image_path, output_folder, classifier_xml):
     # https://docs.opencv.org/3.0-beta/modules/objdetect/doc/cascade_classification.html
     detection_results = object_detector.detectMultiScale3(
         image,
-        scaleFactor=settings.detection['classifier_scale_factor'],
-        minNeighbors=settings.detection['classifier_min_neighbors'],
+        scaleFactor=settings['detection']['classifier_scale_factor'],
+        minNeighbors=settings['detection']['classifier_min_neighbors'],
         outputRejectLevels=True,
-        minSize=(settings.detection['classifier_min_size'], settings.detection['classifier_min_size']),
-        maxSize=(settings.detection['classifier_max_size'], settings.detection['classifier_max_size'])
+        minSize=(settings['detection']['classifier_min_size'], settings['detection']['classifier_min_size']),
+        maxSize=(settings['detection']['classifier_max_size'], settings['detection']['classifier_max_size'])
     )
     rects = detection_results[0]
     rejectlevels = detection_results[1]

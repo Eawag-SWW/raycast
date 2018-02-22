@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, auc
 import pandas as pd
+import seaborn as sns
+sns.set(color_codes=True)
+from itertools import compress
 
 classifier_names = ["Nearest Neighbors",
                     "Linear SVM",
@@ -57,11 +60,56 @@ def main():
             plot_filename = os.path.join(
                 s.general['working_directory'],
                 'iterations',
-                iteration_name,
-                'prc_{}.pdf'.format(classifier))
+                iteration_name, 'plots',
+                'prc_{}.png'.format(classifier))
             finalize_plot(f, ax, plot_filename)
 
+            # Create boxplot
+            boxplot(ax, classifier)
 
+
+def boxplot(data, classifier_name):
+    single = pd.DataFrame({
+        'real': data.y_real_single,
+        'pred': data.y_predicted_single
+    })
+    single['true'] = single.pred[single.real]
+    single['false'] = single.pred[~single.real]
+    multi = pd.DataFrame({
+        'real': data.y_real_multi,
+        'pred': data.y_predicted_multi
+    })
+    multi['true'] = multi.pred[multi.real]
+    multi['false'] = multi.pred[~multi.real]
+
+    labels = ['true positives', 'false positives']
+    f, ax = plt.subplots(1, 2, figsize=(5, 5), sharey=True)
+    # ax[0].set_xlabel('Recall')
+    ax[0].set_ylabel('Prediction')
+    ax[0].set_ylim(0, 1)
+    ax[0].set_title('Single-view')
+    ax[1].set_title('Multi-view')
+    ax[0].violinplot([list(single.true),
+                   list(single.false)],
+                    # notch=True,  # notch shape
+                    # vert=True,  # vertical box alignment
+                    # patch_artist=True,  # fill with color
+                    )  # will be used to label x-ticks
+    ax[1].violinplot([list(multi.true),
+                   list(multi.false)],
+                    # notch=True,  # notch shape
+                    # vert=True,  # vertical box alignment
+                    # patch_artist=True,  # fill with color
+                    )  # will be used to label x-ticks
+    ax[0].set_xticklabels(labels)
+    ax[1].set_xticklabels(labels)
+    plot_file = os.path.join(
+                s.general['working_directory'],
+                'iterations',
+                iteration_name, 'plots',
+                'boxplot_{}.png'.format(classifier_name))
+    f.tight_layout()
+    f.savefig(plot_file)
 
 
 def initialize_plot(classifier_name):

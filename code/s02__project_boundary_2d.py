@@ -32,14 +32,13 @@ import ogr
 import helpers
 import os
 import numpy as np
-import default_settings as settings
 
 
-def project_boundary_2d(config, debug):
+def project_boundary_2d(config, debug, settings):
     """Projects 3D boundary into coordinate systems of 2D images."""
 
     # Read image calibration parameters
-    params = helpers.read_camera_params(settings.inputs['camera_xyz_offset'], settings.inputs['camera_params'])
+    params = helpers.read_camera_params(settings['inputs']['camera_xyz_offset'], settings['inputs']['camera_params'])
 
     # Loop through images, project, clip, save
     count = 0
@@ -48,13 +47,13 @@ def project_boundary_2d(config, debug):
         camera_name = camera['camera_name'].split('.')[0]
         # check if the image actually exists in the project
         if os.path.isfile(os.path.join(
-                settings.inputs['undistorted_image_folder'], camera_name+'.'+settings.inputs['image_extension'])):
-            output_file = os.path.join(settings.general['working_directory'],
-                                       settings.general['preparations_subdir'],
-                                       settings.general['preparations_structure']['proj_2d'],
+                settings['inputs']['undistorted_image_folder'], camera_name+'.'+settings['inputs']['image_extension'])):
+            output_file = os.path.join(settings['general']['working_directory'],
+                                       settings['general']['preparations_subdir'],
+                                       settings['general']['preparations_structure']['proj_2d'],
                                        camera_name + '__boundary2D.json')
             # project and save
-            project2d(output_file, camera, debug=debug)
+            project2d(output_file, camera, settings, debug=debug)
             count += 1
 
         pass
@@ -67,7 +66,7 @@ def project_boundary_2d(config, debug):
     pass
 
 
-def project2d(output_file, camera, debug=False):
+def project2d(output_file, camera, settings, debug=False):
     if debug:
         print 'working on ', output_file
 
@@ -75,18 +74,18 @@ def project2d(output_file, camera, debug=False):
     KRt = np.dot(np.dot(camera['K'], camera['R']), camera['t'])
 
     # create bounding box for clipping
-    xmin = float(camera['t'][0][0]) - int(settings.image_clipping['image_ground_size'])
-    xmax = float(camera['t'][0][0]) + int(settings.image_clipping['image_ground_size'])
-    ymin = float(camera['t'][1][0]) - int(settings.image_clipping['image_ground_size'])
-    ymax = float(camera['t'][1][0]) + int(settings.image_clipping['image_ground_size'])
+    xmin = float(camera['t'][0][0]) - int(settings['image_clipping']['image_ground_size'])
+    xmax = float(camera['t'][0][0]) + int(settings['image_clipping']['image_ground_size'])
+    ymin = float(camera['t'][1][0]) - int(settings['image_clipping']['image_ground_size'])
+    ymax = float(camera['t'][1][0]) + int(settings['image_clipping']['image_ground_size'])
 
     # Load 3D boundary
     # Todo: I tried externalizing the loading of the shape so that it didn't have to be done for each image. However,
     # only the projection for the first image would work - the other were returned empty.
     boundary3D = helpers.load_shape(os.path.join(
-        settings.general['working_directory'],
-        settings.general['preparations_subdir'],
-        settings.general['preparations_structure']['proj_3d'],
+        settings['general']['working_directory'],
+        settings['general']['preparations_subdir'],
+        settings['general']['preparations_structure']['proj_3d'],
         'boundary3D.json'), driver='GeoJSON', debug=debug)
 
     # Register driver
@@ -94,7 +93,7 @@ def project2d(output_file, camera, debug=False):
 
     # create the spatial reference
     # srs = osr.SpatialReference()
-    # srs.ImportFromEPSG(int(settings.general['epsg']))
+    # srs.ImportFromEPSG(int(settings['general']['epsg']))
 
     # Create new file
     # Create new, even if the last already exists, because otherwise there are problems
@@ -137,8 +136,8 @@ def project2d(output_file, camera, debug=False):
                         vec = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
                         # ===================================================
 
-                        u = float(settings.inputs['image_pixel_x']) * vec[0, 0] / vec[2, 0]
-                        v = float(settings.inputs['image_pixel_y']) * vec[1, 0] / vec[2, 0]
+                        u = float(settings['inputs']['image_pixel_x']) * vec[0, 0] / vec[2, 0]
+                        v = float(settings['inputs']['image_pixel_y']) * vec[1, 0] / vec[2, 0]
 
                         # limit point coordinates to keep it from becoming outrageous
                         u = min(max(u, -.5), .5)

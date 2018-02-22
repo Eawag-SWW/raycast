@@ -1,3 +1,5 @@
+pandas
+scipy
 scikit-learn
 matplotlib
 gdal

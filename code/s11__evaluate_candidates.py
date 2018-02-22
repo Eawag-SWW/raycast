@@ -16,44 +16,43 @@ import os
 import pandas as pd
 from shapely.geometry import Point
 from numpy import random
-import default_settings as s
 import datetime
 
 
 # Todo: only evaluate classifier results within the working area in which positives were identified
 
-def evaluate_candidates(config, debug):
+def evaluate_candidates(config, debug, settings):
 
-    for fold_i in range(s.general['do_folds']):
+    for fold_i in range(settings['general']['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
         # input files
-        ground_truth_file = s.inputs['ground_truth']
-        clusters_file = os.path.join(config['iteration_directory'], s.general['iterations_structure']['cluster'],
+        ground_truth_file = settings['inputs']['ground_truth']
+        clusters_file = os.path.join(config['iteration_directory'], settings['general']['iterations_structure']['cluster'],
                                      '3dclusters_{}.csv'.format(fold_i))
-        train_list = os.path.join(s.general['working_directory'],
-                                  s.general['preparations_subdir'],
-                                  s.general['preparations_structure']['folds'],
+        train_list = os.path.join(settings['general']['working_directory'],
+                                  settings['general']['preparations_subdir'],
+                                  settings['general']['preparations_structure']['folds'],
                                'gt_train_{}.csv'.format(fold_i))
-        test_list = os.path.join(s.general['working_directory'],
-                                 s.general['preparations_subdir'],
-                                 s.general['preparations_structure']['folds'],
+        test_list = os.path.join(settings['general']['working_directory'],
+                                 settings['general']['preparations_subdir'],
+                                 settings['general']['preparations_structure']['folds'],
                                'gt_test_{}.csv'.format(fold_i))
         # output files
         out_clusters_train_file = os.path.join(config['iteration_directory'],
-                                          s.general['iterations_structure']['evaluate'],
+                                          settings['general']['iterations_structure']['evaluate'],
                                           '3dclusters_train_{}.csv'.format(fold_i))
-        out_clusters_test_file = os.path.join(config['iteration_directory'], s.general['iterations_structure']['evaluate'],
+        out_clusters_test_file = os.path.join(config['iteration_directory'], settings['general']['iterations_structure']['evaluate'],
                                    '3dclusters_test_{}.csv'.format(fold_i))
 
         # Do evaluation
-        evaluate_clusters(clusters_file, ground_truth_file, out_clusters_train_file, out_clusters_test_file, train_list, test_list)
+        evaluate_clusters(clusters_file, ground_truth_file, out_clusters_train_file, out_clusters_test_file, train_list, test_list, settings)
 
     return 0
 
 
-def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_clusters_test_file, train_list, test_list):
+def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_clusters_test_file, train_list, test_list, settings):
     # Load data
-    ground_truth = read_point_file(truth_file, delimiter=s.inputs['ground_truth_csv_delimiter'])
+    ground_truth = read_point_file(truth_file, delimiter=settings['inputs']['ground_truth_csv_delimiter'], settings=settings)
     clusters = pd.read_csv(candidate_file)
     gt_train = pd.read_csv(train_list)
     gt_test = pd.read_csv(test_list)
@@ -76,7 +75,7 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     # Do evaluation
     for i, cluster in clusters.iterrows():
         # create buffer
-        buffer = Point(float(cluster['x']), float(cluster['y'])).buffer(float(s.evaluation['acceptance_radius']))
+        buffer = Point(float(cluster['x']), float(cluster['y'])).buffer(float(settings['evaluation']['acceptance_radius']))
         # check if a ground truth is within the point's buffer
         for gt in ground_truth:
             if gt['point'].within(buffer) & (not gt['matched']):
@@ -94,7 +93,7 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
 
     # Divide false positives randomly according to folds ratio
     false_alerts = clusters_and_misses[~clusters_and_misses.matched]
-    false_alert_train_mask = random.rand(len(false_alerts)) < float(s.general['folds']-1)/s.general['folds']
+    false_alert_train_mask = random.rand(len(false_alerts)) < float(settings['general']['folds']-1)/settings['general']['folds']
     train_negatives = false_alerts[false_alert_train_mask]
     test_negatives = false_alerts[~false_alert_train_mask]
 
@@ -106,17 +105,16 @@ def evaluate_clusters(candidate_file, truth_file, out_clusters_train_file, out_c
     train_clusters.to_csv(out_clusters_train_file, index=False)
     test_clusters.to_csv(out_clusters_test_file, index=False)
 
-
     return 0
 
 
-def read_point_file(filename, delimiter):
+def read_point_file(filename, delimiter, settings):
     points = []
     with open(filename, 'rb') as f:
         rows = csv.DictReader(f, delimiter=delimiter)
         for row in rows:
             row['point'] = Point(float(row['x']), float(row['y']))
-            row['buffer'] = row['point'].buffer(float(s.evaluation['acceptance_radius']))
+            row['buffer'] = row['point'].buffer(float(settings['evaluation']['acceptance_radius']))
             row['matched'] = False
             row['id'] = int(row['id'])
             points.append(row)

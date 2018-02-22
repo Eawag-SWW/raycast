@@ -24,28 +24,27 @@ import os
 import sys
 from scipy import ndimage
 from scipy import misc
-import default_settings as s
 from tkMessageBox import *
 
 
 REDO_PROJ = False
 
 
-def extract_initial_samples(config, debug):
+def extract_initial_samples(config, debug, settings):
     random.seed(12345)
-    output_file_points = os.path.join(s.general['working_directory'],
-                                      s.general['preparations_subdir'],
-                                      s.general['preparations_structure']['extract'],
+    output_file_points = os.path.join(settings['general']['working_directory'],
+                                      settings['general']['preparations_subdir'],
+                                      settings['general']['preparations_structure']['extract'],
                                       'initial_samples.csv')
-    image_sample_dir = os.path.join(s.general['working_directory'],
-                                    s.general['preparations_subdir'],
-                                    s.general['preparations_structure']['extract'],
+    image_sample_dir = os.path.join(settings['general']['working_directory'],
+                                    settings['general']['preparations_subdir'],
+                                    settings['general']['preparations_structure']['extract'],
                                     'images')
     # read data from file
-    dem_dataset = gdal.Open(s.inputs['demfile'])
+    dem_dataset = gdal.Open(settings['inputs']['demfile'])
     dem_rasterband = dem_dataset.GetRasterBand(1)
     dem_geotransform = dem_dataset.GetGeoTransform()
-    points = pd.read_csv(s.inputs['ground_truth']).append(pd.read_csv(s.inputs['negatives']))
+    points = pd.read_csv(settings['inputs']['ground_truth']).append(pd.read_csv(settings['inputs']['negatives']))
 
     # Only reproject points if required
     if os.path.exists(output_file_points) & (not REDO_PROJ):
@@ -57,24 +56,25 @@ def extract_initial_samples(config, debug):
         points_3d = get_3d_points(dem_rasterband, dem_geotransform, points)
 
         # Read image calibration parameters
-        params = helpers.read_camera_params(s.inputs['camera_xyz_offset'], s.inputs['camera_params'])
+        params = helpers.read_camera_params(settings['inputs']['camera_xyz_offset'], settings['inputs']['camera_params'])
 
         # Transform and save samples
         print ('extracting image coordinates for each sample')
         valid_2d = get_2d(points3d=points_3d,
                           params=params,
                           output_file=output_file_points,
-                          rating_threshold=s.training_images['negatives_rating_threshold'])
+                          rating_threshold=settings['training_images']['negatives_rating_threshold'],
+                          settings=settings)
 
     # Clip samples
     print ('clipping samples')
-    extract_candidate_images(image_sample_dir, valid_2d, debug)
+    extract_candidate_images(image_sample_dir, valid_2d, debug, settings)
 
     # Todo: manually verify that the samples are correct.
     return 0
 
 
-def get_2d(points3d, params, output_file, rating_threshold=0.01):
+def get_2d(points3d, params, output_file, settings, rating_threshold=0.01):
     points2d = pd.DataFrame()
     # For each image, apply transformation and save the points
     for camera in params:
@@ -92,17 +92,17 @@ def get_2d(points3d, params, output_file, rating_threshold=0.01):
             [[img_x], [img_y], [img_z]] = np.dot(np.dot(camera['K'], camera['R']), X) - KRt
             # ===================================================
 
-            u = float(s.inputs['image_pixel_x']) * img_x / img_z
-            v = float(s.inputs['image_pixel_y']) * img_y / img_z
+            u = float(settings['inputs']['image_pixel_x']) * img_x / img_z
+            v = float(settings['inputs']['image_pixel_y']) * img_y / img_z
 
             upix = int(u * 100000)
             vpix = int(v * -100000)
 
             # check if point is within image
-            is_in_img = is_in_bbox(upix, vpix, s.training_images['width'],
-                                   s.inputs['image_width_px'] - s.training_images['width'],
-                                   s.training_images['height'],
-                                   s.inputs['image_height_px'] - s.training_images['height'])
+            is_in_img = is_in_bbox(upix, vpix, settings['training_images']['width'],
+                                   settings['inputs']['image_width_px'] - settings['training_images']['width'],
+                                   settings['training_images']['height'],
+                                   settings['inputs']['image_height_px'] - settings['training_images']['height'])
             if is_in_img & ((point.rating >= rating_threshold) | point.matched):
                 # save point
                 points2d = points2d.append(pd.DataFrame({
@@ -140,7 +140,7 @@ def is_in_bbox(x, y, xmin, xmax, ymin, ymax, buffer=200):
     return (x < (xmax - buffer)) & (x > (xmin + buffer)) & (y < (ymax - buffer)) & (y > (ymin + buffer))
 
 
-def extract_candidate_images(training_image_dir, points, debug):
+def extract_candidate_images(training_image_dir, points, debug, settings):
     # Sample extraction
 
     # Check that directories exist and delete any content
@@ -158,7 +158,7 @@ def extract_candidate_images(training_image_dir, points, debug):
     candidates = points
 
     # load blacklist
-    blacklist = pd.read_csv(s.inputs['ground_truth_blacklist'])
+    blacklist = pd.read_csv(settings['inputs']['ground_truth_blacklist'])
 
     # Make a list of already seen negatives
     already_seen_negatives = []
@@ -166,10 +166,10 @@ def extract_candidate_images(training_image_dir, points, debug):
     for image_name in list(candidates.image.unique()):
         sys.stdout.write('.')
         # Load image
-        image_file = os.path.join(s.inputs['undistorted_image_folder'],
-                                  image_name + '.' + s.inputs['image_extension'])
+        image_file = os.path.join(settings['inputs']['undistorted_image_folder'],
+                                  image_name + '.' + settings['inputs']['image_extension'])
         # image_file = os.path.join("Q:/Messdaten/floodVisionData/side_2016_raycast/data/training_adliswil/original_images",
-        #                           image_name + '.jpg') #  '+settings.inputs['image_extension'])
+        #                           image_name + '.jpg') #  '+settingsettings['inputs']['image_extension'])
         if not os.path.isfile(image_file):
             continue
 
@@ -185,11 +185,22 @@ def extract_candidate_images(training_image_dir, points, debug):
             # if is ground truth and not in blacklist
             if cd.matched and (cd['id'] not in list(filtered_blacklist.id)):
                 # Clip image
-                make_samples(point=cd, image=image, is_positive=cd['matched'], save_dir=training_image_dir)
+                make_samples(
+                    point=cd,
+                    image=image,
+                    is_positive=cd['matched'],
+                    save_dir=training_image_dir,
+                    settings=settings
+                )
             elif (not cd.matched) and (cd.id not in already_seen_negatives):
                 already_seen_negatives.append(cd.id)
                 # Clip image
-                make_samples(point=cd, image=image, is_positive=cd['matched'], save_dir=training_image_dir)
+                make_samples(point=cd,
+                             image=image,
+                             is_positive=cd['matched'],
+                             save_dir=training_image_dir,
+                             settings=settings
+                             )
 
     print 'done clipping. Writing dat files'
     showwarning(title='Verify samples', message='Please verify that the sample images in %s are correct.' %
@@ -207,16 +218,16 @@ def extract_candidate_images(training_image_dir, points, debug):
     return 0
 
 
-def make_samples(point, image, is_positive, save_dir):
+def make_samples(point, image, is_positive, save_dir, settings):
     # How much to augment the data
     if is_positive:
-        num_variations = s.sample_preparations['augmentation_ratio_positives']
+        num_variations = settings['sample_preparations']['augmentation_ratio_positives']
     else:
-        num_variations = s.sample_preparations['augmentation_ratio_negatives']
+        num_variations = settings['sample_preparations']['augmentation_ratio_negatives']
 
     # Make box that is 1.5 times the final sample size
-    w = int(s.training_images['width'] * 1.5)
-    h = int(s.training_images['height'] * 1.5)
+    w = int(settings['training_images']['width'] * 1.5)
+    h = int(settings['training_images']['height'] * 1.5)
     box_left = point.img_x - w / 2
     box_upper = point.img_y - h / 2
     box_right = point.img_x + w / 2
@@ -239,8 +250,8 @@ def make_samples(point, image, is_positive, save_dir):
 
         # recrop to final size
         w_big = int(transformed.shape[0])  # width of transformed image
-        start = int((w_big - s.training_images['width'])/2)
-        end = int((w_big + s.training_images['width'])/2)
+        start = int((w_big - settings['training_images']['width'])/2)
+        end = int((w_big + settings['training_images']['width'])/2)
 
         crop2 = transformed[start:end, start:end]
 

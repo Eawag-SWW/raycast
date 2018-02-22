@@ -20,35 +20,29 @@ Tools:
 """
 
 import sklearn.cluster as skit
-import sklearn.neighbors as neighbors
 import os
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
-from shapely.ops import cascaded_union
-import csv
-import sys
-import default_settings as settings
 
 
-def cluster_3d(config, debug):
+def cluster_3d(config, debug, settings):
     # Where to save clusters
     save_to_directory = os.path.join(config['iteration_directory'],
-                                     settings.general['iterations_structure']['cluster'])
+                                     settings['general']['iterations_structure']['cluster'])
 
-    for fold_i in range(settings.general['do_folds']):
+    for fold_i in range(settings['general']['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
         # Where to get points from
         points_file = os.path.join(config['iteration_directory'],
-                                   settings.general['iterations_structure']['cast'], '3dpoints_{}.csv'.format(fold_i))
+                                   settings['general']['iterations_structure']['cast'], '3dpoints_{}.csv'.format(fold_i))
         clusters_file = os.path.join(save_to_directory, '3dclusters_{}.csv'.format(fold_i))
 
         points_df = pd.read_csv(points_file)
 
         # do clustering
         clusters_df = cluster_dbscan(points_df,
-                                     neighborhood_size=settings.clustering_3d["neighborhood_size"],
-                                     min_samples=settings.clustering_3d["min_samples"])
+                                     neighborhood_size=settings['clustering_3d']["neighborhood_size"],
+                                     min_samples=settings['clustering_3d']["min_samples"])
 
         # save
         clusters_df.to_csv(clusters_file, index=False)

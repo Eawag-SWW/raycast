@@ -23,21 +23,20 @@ Writes:
 import os
 from glob import glob
 from subprocess import call
-import default_settings as settings
 
 
-def clip_images_2d(config, debug):
+def clip_images_2d(config, debug, settings):
     """Clips images with the projected road boundary information"""
     # todo: read image resolution from tiff metadata
 
-    output_folder = os.path.join(settings.general['working_directory'],
-                                 settings.general['preparations_subdir'],
-                                 settings.general['preparations_structure']['clip'])
+    output_folder = os.path.join(settings['general']['working_directory'],
+                                 settings['general']['preparations_subdir'],
+                                 settings['general']['preparations_structure']['clip'])
 
     # Loop through files of projected boundaries
-    boundary_folder = os.path.join(settings.general['working_directory'],
-                                   settings.general['preparations_subdir'],
-                                   settings.general['preparations_structure']['proj_2d'])
+    boundary_folder = os.path.join(settings['general']['working_directory'],
+                                   settings['general']['preparations_subdir'],
+                                   settings['general']['preparations_structure']['proj_2d'])
 
     # Count files to work through:
     boundary_files = glob(os.path.join(boundary_folder, '*.json'))
@@ -51,8 +50,8 @@ def clip_images_2d(config, debug):
         if debug:
             print 'clipping file ' + str(file_index) + ' of ' + str(file_count)
         file_index += 1
-        image_file = os.path.join(settings.inputs['undistorted_image_folder'], os.path.basename(boundary_file).split('__')[0] + '.'+settings.inputs['image_extension'])
-        image_file_clipped = os.path.join(output_folder, os.path.basename(boundary_file).split('__')[0] + '.'+settings.inputs['image_extension'])
+        image_file = os.path.join(settings['inputs']['undistorted_image_folder'], os.path.basename(boundary_file).split('__')[0] + '.'+settings['inputs']['image_extension'])
+        image_file_clipped = os.path.join(output_folder, os.path.basename(boundary_file).split('__')[0] + '.'+settings['inputs']['image_extension'])
         if os.path.isfile(image_file):
             try:
                 call(
@@ -64,7 +63,7 @@ def clip_images_2d(config, debug):
                      '-overwrite',
                      image_file,
                      image_file_clipped],
-                    executable=settings.general['gdalwarp'])
+                    executable=settings['general']['gdalwarp'])
             except:
                 raise NameError('Error with reprojection')
             processed += 1

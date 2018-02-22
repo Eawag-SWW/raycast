@@ -9,60 +9,66 @@ Writes:
 """
 
 import os
-import default_settings as s
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
-from sklearn.neighbors import KNeighborsClassifier
+# from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF
-from sklearn.tree import DecisionTreeClassifier
+# from sklearn.gaussian_process import GaussianProcessClassifier
+# from sklearn.gaussian_process.kernels import RBF
+# from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+# from sklearn.naive_bayes import GaussianNB
+# from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 import pickle
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve, auc
+import datetime
 
 
-def fit_classifiers(config, debug):
+def fit_classifiers(config, debug, settings):
     results_folder_root = os.path.join(config['iteration_directory'],
-                                       s.general['iterations_structure']['fit'])
-    input_folder = os.path.join(config['iteration_directory'], s.general['iterations_structure']['evaluate'])
+                                       settings['general']['iterations_structure']['fit'])
+    input_folder = os.path.join(config['iteration_directory'], settings['general']['iterations_structure']['evaluate'])
 
-    do_fit_classifiers(config=config, results_folder_root=results_folder_root, input_folder=input_folder)
+    do_fit_classifiers(
+        config=config,
+        results_folder_root=results_folder_root,
+        input_folder=input_folder,
+        settings=settings)
 
     return 0
 
 
-def do_fit_classifiers(config, results_folder_root, input_folder):
+def do_fit_classifiers(config, results_folder_root, input_folder, settings):
     # create logistic regression model and train it
     classifiers = [
-        KNeighborsClassifier(3),
+        # KNeighborsClassifier(3),
         SVC(kernel="linear", C=0.025, probability=True),
-        SVC(gamma=2, C=1, probability=True),
+        # SVC(gamma=2, C=1, probability=True, class_weight={0: 1, 1: 5}),
         # GaussianProcessClassifier(1.0 * RBF(1.0)),
-        DecisionTreeClassifier(max_depth=5),
+        # DecisionTreeClassifier(max_depth=5),
         RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
         MLPClassifier(alpha=1),
-        AdaBoostClassifier(),
-        GaussianNB(),
-        QuadraticDiscriminantAnalysis(),
+        # AdaBoostClassifier(),
+        # GaussianNB(),
+        # QuadraticDiscriminantAnalysis(),
         LogisticRegression()
     ]
-    names = ["Nearest Neighbors",
-             "Linear SVM",
-             "RBF SVM",
-             # "Gaussian Process",
-             "Decision Tree",
-             "Random Forest",
-             "Neural Net",
-             "AdaBoost",
-             "Naive Bayes",
-             "QDA",
-             "LogisticRegression"]
+    names = [
+        # "Nearest Neighbors",
+        "Linear SVM",
+        # "RBF SVM",
+        # "Gaussian Process",
+        # "Decision Tree",
+        "Random Forest",
+        "Neural Net",
+        # "AdaBoost",
+        # "Naive Bayes",
+        # "QDA",
+        "LogisticRegression"
+    ]
 
     # iterate over classifiers and folds
     for name, clf in zip(names, classifiers):
@@ -71,13 +77,13 @@ def do_fit_classifiers(config, results_folder_root, input_folder):
         if not os.path.exists(results_folder):
             os.makedirs(results_folder)
         f, ax = initialize_plot(name)
-        for fold_i in range(s.general['do_folds']):
+        for fold_i in range(settings['general']['do_folds']):
             # print('-- FOLD {} --'.format(fold_i))
             # Read evaluated clusters
             cluster_train_file = os.path.join(input_folder,
-                                        '3dclusters_train_{}.csv'.format(fold_i))
+                                              '3dclusters_train_{}.csv'.format(fold_i))
             cluster_test_file = os.path.join(input_folder,
-                                        '3dclusters_test_{}.csv'.format(fold_i))
+                                             '3dclusters_test_{}.csv'.format(fold_i))
 
             # read training and test data
             data_train = pd.read_csv(cluster_train_file)
@@ -139,9 +145,39 @@ def do_fit_classifiers(config, results_folder_root, input_folder):
 
         # finalize plot
         plot_file = os.path.join(results_folder_root, 'precision_recall_({}).png'.format(name))
-        finalize_plot(f, ax, plot_file)
+        average_precision = finalize_plot(f, ax, plot_file)
+        # write results to file
+        results_file = os.path.join(results_folder_root, 'average_precision_log.csv')
+        log_results(average_precision, settings, name, results_file)
+
 
     return 0
+
+
+def log_results(average_precision, settings, classifier_name, results_file):
+    if not os.path.exists(results_file):
+        # create file
+        results_log = pd.DataFrame({
+            'classifier': [],
+            'cluster_epsilon': [],
+            'cluster_min_count': [],
+            'average_precision': [],
+            'datetime': []
+        })
+    else:
+        # read file
+        results_log = pd.read_csv(results_file)
+
+    results_log = results_log.append({
+            'classifier': [classifier_name],
+            'cluster_epsilon': [settings['clustering_3d']['neighborhood_size']],
+            'cluster_min_count': [settings['clustering_3d']['min_samples']],
+            'average_precision': [average_precision],
+            'datetime': [datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S")]
+        })
+
+    # write to file
+    results_log.to_csv(results_file)
 
 
 def initialize_plot(classifier_name):
@@ -167,9 +203,11 @@ def update_plot(ax, y_real, y_proba, fold_i):
 
 def finalize_plot(f, ax, plot_file):
     precision, recall, _ = precision_recall_curve(ax.y_real, ax.y_proba)
-    lab = 'Overall AUC=%.4f' % (auc(recall, precision))
+    average_precision = auc(recall, precision)
+    lab = 'Overall AUC=%.4f' % average_precision
     ax.step(recall[recall < 1], precision[recall < 1], label=lab, lw=2, color='black', where='post')
     ax.legend(loc='lower left', fontsize='small')
     f.tight_layout()
     f.savefig(plot_file)
     # plt.show()
+    return average_precision

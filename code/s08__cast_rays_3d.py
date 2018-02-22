@@ -34,25 +34,24 @@ import numpy as np
 import pandas as pd
 import helpers
 import csv
-import default_settings as settings
 
 
-def cast_rays_3d(config, debug):
+def cast_rays_3d(config, debug, settings):
     # Where to find the 2D clusters
     cluster_folder = os.path.join(config['iteration_directory'],
-                                  settings.general['iterations_structure']['detect'])
+                                  settings['general']['iterations_structure']['detect'])
 
     # Get camera calibration information
     camera_params = helpers.read_camera_params(
-        settings.inputs['camera_xyz_offset'],
-        settings.inputs['camera_params'])
+        settings['inputs']['camera_xyz_offset'],
+        settings['inputs']['camera_params'])
 
     # Load 3D mesh
     print 'Loading 3D mesh...'
-    mesh = loadSTL(settings.inputs['3dmesh'])
+    mesh = loadSTL(settings['inputs']['3dmesh'])
 
     # Load mesh offset
-    with open(settings.inputs['3dmesh_offset'], 'r') as offsetfile:
+    with open(settings['inputs']['3dmesh_offset'], 'r') as offsetfile:
         mesh_offset = np.array(map(float, offsetfile.readlines()[0].split()))
 
     # build OBB tree for fast intersection search
@@ -61,7 +60,7 @@ def cast_rays_3d(config, debug):
     obbTree.SetDataSet(mesh)
     obbTree.BuildLocator()
 
-    for fold_i in range(settings.general['do_folds']):
+    for fold_i in range(settings['general']['do_folds']):
         print('-- FOLD {} --'.format(fold_i))
 
         # initialize result lists
@@ -99,8 +98,8 @@ def cast_rays_3d(config, debug):
 
                 # Step 1: project to 3D space
                 X2d = np.array([
-                    [cluster[0] * zval / float(settings.inputs['image_pixel_x'])],
-                    [cluster[1] * zval / float(settings.inputs['image_pixel_y'])],
+                    [cluster[0] * zval / float(settings['inputs']['image_pixel_x'])],
+                    [cluster[1] * zval / float(settings['inputs']['image_pixel_y'])],
                     [zval]])
                 X3d = np.dot(KRinv, (X2d + KRt))
 
@@ -108,11 +107,13 @@ def cast_rays_3d(config, debug):
                 intersection_target = np.transpose(X3d)[0] - mesh_offset
                 pointsVTKintersection = vtk.vtkPoints()
 
-                # Step 2: intersect line with surface and retain lowest
+                # Step 2: intersect line with surface and retain first
                 code = obbTree.IntersectWithLine(intersection_source, intersection_target, pointsVTKintersection, None)
-                if code == 1:
+                # code is non-zero if there was an intersection
+                if code != 0:
                     pointsVTKIntersectionData = pointsVTKintersection.GetData()
                     noPointsVTKIntersection = pointsVTKIntersectionData.GetNumberOfTuples()
+                    # retain the first intersect
                     (x, y, z) = pointsVTKIntersectionData.GetTuple3(0)
                     # append results to list
                     r['x'].append(x + mesh_offset[0])
@@ -127,7 +128,7 @@ def cast_rays_3d(config, debug):
         # write results to dataframe
         # Where to save 3D points
         output_file = os.path.join(config['iteration_directory'],
-                                   settings.general['iterations_structure']['cast'],
+                                   settings['general']['iterations_structure']['cast'],
                                    '3dpoints_{}.csv'.format(fold_i))
         pd.DataFrame({
             'x': r['x'],

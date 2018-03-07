@@ -38,4 +38,8 @@ def ortho_cluster(config, debug, settings):
         # save
         clusters_df.to_csv(clusters_file, index=False)
 
+        # check number of clusters is sufficient
+        if len(clusters_df) < 70:
+            return 2
+
     return 0

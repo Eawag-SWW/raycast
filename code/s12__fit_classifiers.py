@@ -23,7 +23,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 # from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 import pickle
 import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve, auc, average_precision_score
+from sklearn.metrics import precision_recall_curve, auc
 import datetime
 
 
@@ -141,8 +141,12 @@ def do_fit_classifiers(config, results_folder_root, input_folder, settings, view
                 data_test[data_test.missed]], axis=0, join='outer', ignore_index=True).fillna(0)
 
             # write to files
-            data_train.to_csv(os.path.join(results_folder, '3dclusters_train_{}.csv'.format(fold_i)))
-            data_test.to_csv(os.path.join(results_folder, '3dclusters_test_{}.csv'.format(fold_i)))
+            data_train.to_csv(os.path.join(results_folder, '3dclusters_train_R{}N{}_{}.csv'.format(
+                                     settings['clustering_3d']['neighborhood_size'],
+                                     settings['clustering_3d']['min_samples'], fold_i)))
+            data_test.to_csv(os.path.join(results_folder, '3dclusters_test_R{}N{}_{}.csv'.format(
+                                     settings['clustering_3d']['neighborhood_size'],
+                                     settings['clustering_3d']['min_samples'], fold_i)))
 
             # attach misses to data
             y_test_with_misses = np.append(y_test, y_test_misses, axis=0)
@@ -151,7 +155,11 @@ def do_fit_classifiers(config, results_folder_root, input_folder, settings, view
             ax = update_plot(ax, y_test_with_misses, y_test_predict_with_misses[:, 1], fold_i)
 
         # finalize plot
-        plot_file = os.path.join(results_folder_root, 'precision_recall_({}).png'.format(name))
+        plot_file = os.path.join(results_folder_root,
+                                 'precision_recall_R{}_N{}_({}).png'.format(
+                                     settings['clustering_3d']['neighborhood_size']*100,
+                                     settings['clustering_3d']['min_samples'],
+                                     name))
         average_precision = finalize_plot(f, ax, plot_file)
         # write results to file
         results_file = os.path.join(results_folder_root, 'average_precision_log.csv')
@@ -166,7 +174,7 @@ def log_results(average_precision, settings, classifier_name, view_mode, results
         # create file
         results_log = pd.DataFrame({
             'classifier': [],
-            'mode':[],
+            'mode': [],
             'cluster_epsilon': [],
             'cluster_min_count': [],
             'average_precision': [],
@@ -202,7 +210,7 @@ def initialize_plot(classifier_name):
 
 def update_plot(ax, y_real, y_proba, fold_i):
     precision, recall, _ = precision_recall_curve(y_real, y_proba)
-    lab = 'Fold %d AP=%.4f' % (fold_i + 1, average_precision_score(y_real, y_proba))
+    lab = 'Fold %d AP=%.4f' % (fold_i + 1, auc(recall[recall < 1], precision[recall < 1]))
     ax.step(recall[recall < 1], precision[recall < 1], label=lab, where='post')
     # update list containing results from all folds
     ax.y_real += list(y_real)
@@ -212,7 +220,7 @@ def update_plot(ax, y_real, y_proba, fold_i):
 
 def finalize_plot(f, ax, plot_file):
     precision, recall, _ = precision_recall_curve(ax.y_real, ax.y_proba)
-    average_precision = average_precision_score(ax.y_real, ax.y_proba)
+    average_precision = auc(recall[recall < 1], precision[recall < 1])
     lab = 'Overall AP=%.4f' % average_precision
     ax.step(recall[recall < 1], precision[recall < 1], label=lab, lw=2, color='black', where='post')
     ax.legend(loc='lower left', fontsize='small')

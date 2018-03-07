@@ -1,8 +1,8 @@
 from core import run_all
 import numpy as np
 
-neighborhood_size_list = np.arange(0.05, 0.3, 0.05)
-min_samples_list = range(5, 30, 5)
+neighborhood_size_list = np.arange(0.15, 0.26, 0.01)
+min_samples_list = range(1, 16, 1)
 
 # ugly loops
 for size in neighborhood_size_list:

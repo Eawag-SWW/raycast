@@ -22,53 +22,84 @@ classifier_names = ["Nearest Neighbors",
 
 iteration_name = '2018-01-25 17.43.50'
 
+multi_view_results_dir_root = os.path.join(
+    s['general']['working_directory'],
+    s['general']['iterations_subdir'],
+    iteration_name,
+    s['general']['iterations_structure']['fit'])
+
+single_view_results_dir_root = os.path.join(
+    s['general']['working_directory'],
+    s['general']['iterations_subdir'],
+    iteration_name,
+    s['general']['iterations_structure']['ortho_fit'])
+
+curves = [
+    {
+        "epsilon": 18.0,
+        "min_samples": 4,
+        "classifier": 'Neural Net',
+        "folder": multi_view_results_dir_root,
+        "title": 'multi-view',
+        "linestyle": '-',
+        "color": '#ff0000'
+
+    },
+ {
+        "epsilon": 16.0,
+        "min_samples": 2,
+        "classifier": 'Neural Net',
+        "folder": single_view_results_dir_root,
+        "title": 'single-view',
+        "linestyle": '--',
+        "color": '#000000'
+    }
+]
+
+
 
 def main():
-    multi_view_results_dir_root = os.path.join(
+
+    f, ax = initialize_plot()
+
+    for c in curves:
+        # if (os.path.exists(os.path.join(multi_view_results_dir_root, classifier)) &
+        #         os.path.exists(os.path.join(single_view_results_dir_root, classifier))):
+
+        y_real = []
+        y_predicted = []
+        precision_folds = []
+        recall_folds = []
+
+        # loop through folds and load data
+        for fold_i in range(s['general']['do_folds']):
+            data = pd.read_csv(os.path.join(multi_view_results_dir_root, c['classifier'],
+                                           '3dclusters_test_R{}N{}_{}.csv'.format(
+                                               c['epsilon']/100,
+                                               c['min_samples'],
+                                               fold_i)))
+
+            # load data
+            #compute individual PR curve
+            precision, recall, _ = precision_recall_curve(data.matched, data.rating)
+            precision_folds += list(precision)
+            recall_folds += list(recall)
+            y_real += list(data.matched)
+            y_predicted += list(data.rating)
+            draw_fold(ax, c, list(data.matched), list(data.rating))
+
+        # make plot
+        update_plot(ax, c, y_real, y_predicted)
+
+    plot_filename = os.path.join(
         s['general']['working_directory'],
-        s['general']['iterations_subdir'],
-        iteration_name,
-        s['general']['iterations_structure']['fit'])
-
-    single_view_results_dir_root = os.path.join(
-        s['general']['working_directory'],
-        s['general']['iterations_subdir'],
-        iteration_name,
-        s['general']['iterations_structure']['ortho_fit'])
-
-    for classifier in classifier_names:
-        if (os.path.exists(os.path.join(multi_view_results_dir_root, classifier)) &
-                os.path.exists(os.path.join(single_view_results_dir_root, classifier))):
-
-            f, ax = initialize_plot(classifier)
-
-            # loop through folds and load data
-            for fold_i in range(s['general']['do_folds']):
-                file_multi_view = os.path.join(multi_view_results_dir_root, classifier,
-                                               '3dclusters_test_{}.csv'.format(fold_i))
-                file_single_view = os.path.join(single_view_results_dir_root, classifier,
-                                                '3dclusters_test_{}.csv'.format(fold_i))
-
-                # load data
-                data_multi = pd.read_csv(file_multi_view)
-                data_single = pd.read_csv(file_single_view)
-                y_real_multi = data_multi.matched
-                y_real_single = data_single.matched
-                y_predicted_multi = data_multi.rating
-                y_predicted_single = data_single.rating
-
-                # update plot
-                update_plot(ax, y_real_multi, y_real_single, y_predicted_multi, y_predicted_single)
-
-            plot_filename = os.path.join(
-                s['general']['working_directory'],
-                'iterations',
-                iteration_name, 'plots',
-                'prc_{}.png'.format(classifier))
-            finalize_plot(f, ax, plot_filename)
+        'iterations',
+        iteration_name, 'plots',
+        'precision-recall_{}.pdf'.format('comparison'))
+    finalize_plot(f, ax, plot_filename)
 
             # Create boxplot
-            boxplot(ax, classifier)
+            # boxplot(ax, classifier)
 
 
 def boxplot(data, classifier_name):
@@ -115,41 +146,37 @@ def boxplot(data, classifier_name):
     f.savefig(plot_file)
 
 
-def initialize_plot(classifier_name):
+def initialize_plot():
     f, ax = plt.subplots(figsize=(5, 5))
     ax.set_xlabel('Recall')
     ax.set_ylabel('Precision')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
-    ax.set_title(classifier_name)
-    ax.y_real_multi, ax.y_predicted_multi, ax.y_real_single, ax.y_predicted_single = [], [], [], []
+    ax.set_title('comparison')
     return f, ax
 
 
-def update_plot(ax, y_real_multi, y_real_single, y_predicted_multi, y_predicted_single):
-    # Multiview
-    precision, recall, _ = precision_recall_curve(y_real_multi, y_predicted_multi)
-    ax.plot(recall[recall < 1], precision[recall < 1], linestyle='-', color='#ffaaaa')
-    # update list containing results from all folds
-    ax.y_real_multi += list(y_real_multi)
-    ax.y_predicted_multi += list(y_predicted_multi)
+def draw_fold(ax, curve, y_real, y_predicted):
+    # plot PR curves
+    precision, recall, _ = precision_recall_curve(y_real, y_predicted)
+    ax.plot(recall[recall < 1], precision[recall < 1],
+            linestyle=curve['linestyle'], color=curve['color'], alpha=0.3, lw=1)
+    return ax
 
-    # Singleview
-    precision, recall, _ = precision_recall_curve(y_real_single, y_predicted_single)
-    ax.plot(recall[recall < 1], precision[recall < 1], linestyle=':', color='#afafaf')
-    # update list containing results from all folds
-    ax.y_real_single += list(y_real_single)
-    ax.y_predicted_single += list(y_predicted_single)
+
+def update_plot(ax, curve, y_real, y_predicted):
+    # plot PR curves
+    precision, recall, _ = precision_recall_curve(y_real, y_predicted)
+    lab = '{} ({:.2f}AP)'.format(curve['title'], auc(recall[recall < 1], precision[recall < 1]))
+    ax.plot(recall[recall < 1], precision[recall < 1],
+            label=lab, linestyle=curve['linestyle'], color=curve['color'])
     return ax
 
 
 def finalize_plot(f, ax, plot_file):
-    precision, recall, _ = precision_recall_curve(ax.y_real_multi, ax.y_predicted_multi)
-    lab = 'Multi-view AUC: %.4f' % (auc(recall, precision))
-    ax.plot(recall[recall < 1], precision[recall < 1], label=lab, lw=2, color='#ff0000')
-    precision, recall, _ = precision_recall_curve(ax.y_real_single, ax.y_predicted_single)
-    lab = 'Single-view AUC: %.4f' % (auc(recall, precision))
-    ax.plot(recall[recall < 1], precision[recall < 1], label=lab, lw=2, linestyle=':', color='#000000')
+    # precision, recall, _ = precision_recall_curve(ax.y_real_single, ax.y_predicted_single)
+    # lab = 'Single-view AUC: %.4f' % (auc(recall[recall < 1], precision[recall < 1]))
+    # ax.plot(recall[recall < 1], precision[recall < 1], label=lab, lw=2, linestyle=':', color='#000000')
     ax.legend(loc='lower left', fontsize='small')
     f.tight_layout()
     f.savefig(plot_file)
